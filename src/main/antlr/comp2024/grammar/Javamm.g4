@@ -41,13 +41,16 @@ TRUE : 'true';
 FALSE : 'false';
 THIS : 'this';
 
-INTEGER : [0-9] ;
-ID : [a-zA-Z]+ ;
+INTEGER : '0' | [1-9] [0-9]* ;
+ID : [a-zA-Z$_] [a-zA-Z0-9$_]* ;
 
 WS : [ \t\n\r\f]+ -> skip ;
 
+SINGLE_LINE_COMMENT : ('//' .*? '\n') -> skip;
+MULTI_LINE_COMMENT: ('/*' .*? '*/') -> skip;
+
 program
-    : importDecl* classDecl EOF
+    : importList+=importDecl* class=classDecl EOF
     ;
 
 importDecl
@@ -57,66 +60,63 @@ importDecl
 classDecl
     : CLASS name=ID (EXTENDS extended_name=ID)?
         LCURLY
-        varDecl*
-        methodDecl*
+        varList+=varDecl*
+        methodList+=methodDecl*
         RCURLY
     ;
 
 varDecl
-    : type name=ID SEMI
+    : varType=type name=ID SEMI
     ;
 
 methodDecl locals[boolean isPublic=false]
     : (PUBLIC {$isPublic=true;})?
-        type name=ID
+        methodType=type name=ID
         LPAREN parameters+=param(',' parameters+=param)* RPAREN
-        LCURLY varDecl* stmt* RETURN expr SEMI RCURLY #OtherMethod
+        LCURLY vars+=varDecl* stmts+=stmt* RETURN returnExpr=expr SEMI RCURLY #OtherMethod
     | (PUBLIC {$isPublic=true;})?
         STATIC VOID MAIN
         LPAREN STRING LSQUARE RSQUARE parameter=ID RPAREN
-        LCURLY varDecl* stmt* RCURLY #MainMethod
+        LCURLY vars+=varDecl* stmts+=stmt* RCURLY #MainMethod
     ;
 
 type
-    : name = INT LSQUARE RSQUARE #IntArray
-    | name = INT ELLIPSIS #VarArgs
-    | name = BOOLEAN #Boolean
-    | name = INT #Int
-    | ID #OtherClasses
+    : INT LSQUARE RSQUARE #IntArray
+    | INT ELLIPSIS #VarArgs
+    | BOOLEAN #Boolean
+    | INT #Int
+    | name=ID #OtherClasses
     ;
 
 param
-    : type name=ID
+    : paramType=type name=ID
     ;
 
 stmt
-    : LCURLY stmt* RCURLY #StmtGroup
-    | IF LPAREN expr RPAREN stmt ELSE stmt #IfStmt
-    | WHILE LPAREN expr RPAREN stmt #WhileStmt
+    : LCURLY stmts+=stmt* RCURLY #StmtGroup
+    | IF LPAREN condition=expr RPAREN ifBody=stmt ELSE elseBody=stmt #IfStmt
+    | WHILE LPAREN condition=expr RPAREN body=stmt #WhileStmt
     | expr SEMI #ExprStmt
-    | ID EQUALS expr SEMI #AssignStmt
-    | ID LSQUARE expr RSQUARE EQUALS expr SEMI #ArrayAssignStmt
+    | ID EQUALS value=expr SEMI #AssignStmt
+    | ID LSQUARE index=expr RSQUARE EQUALS value=expr SEMI #ArrayAssignStmt
     ;
 
 expr
     : EXCL expr #NotExpr
-    | expr op=(MUL | DIV) expr #BinaryExpr
-    | expr op=(ADD | SUB) expr #BinaryExpr
-    | expr op=LT expr #BinaryExpr
-    | expr op=AND expr #BinaryExpr
-    | expr LSQUARE expr RSQUARE #ArrayIndexExpr
+    | left=expr op=(MUL | DIV) right=expr #BinaryExpr
+    | left=expr op=(ADD | SUB) right=expr #BinaryExpr
+    | left=expr op=LT right=expr #BinaryExpr
+    | left=expr op=AND right=expr #BinaryExpr
+    | name=expr LSQUARE index=expr RSQUARE #ArrayIndexExpr
     | expr '.' LENGTH #LenExpr
-    | expr '.' id=ID LPAREN (expressions+=expr(',' expressions+=expr)*)? RPAREN #MethodCallExpr
-    | NEW INT LSQUARE expr RSQUARE #NewArrayExpr
-    | NEW id=ID LPAREN RPAREN #NewObjExpr
+    | object=expr '.' method=ID LPAREN (args+=expr(',' args+=expr)*)? RPAREN #MethodCallExpr
+    | NEW INT LSQUARE size=expr RSQUARE #NewArrayExpr
+    | NEW name=ID LPAREN RPAREN #NewObjExpr
     | LPAREN expr RPAREN #ParenExpr
-    | LSQUARE (expressions+=expr(',' expressions+=expr)*)? RSQUARE #ArrayExpr
+    | LSQUARE (elems+=expr(',' elems+=expr)*)? RSQUARE #ArrayDeclExpr
     | value=INTEGER #IntLiteralExpr
     | TRUE #TrueLiteralExpr
     | FALSE #FalseLiteralExpr
     | name=ID #IDLiteralExpr
     | THIS #ThisExpr
     ;
-
-
-
