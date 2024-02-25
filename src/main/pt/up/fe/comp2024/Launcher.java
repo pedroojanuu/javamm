@@ -1,5 +1,6 @@
 package pt.up.fe.comp2024;
 
+import org.antlr.v4.gui.TreeViewer;
 import pt.up.fe.comp.TestUtils;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.jasmin.JasminResult;
@@ -12,6 +13,7 @@ import pt.up.fe.comp2024.parser.JmmParserImpl;
 import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.SpecsSystem;
 
+import java.util.Arrays;
 import java.util.Map;
 
 public class Launcher {
@@ -33,8 +35,9 @@ public class Launcher {
         TestUtils.noErrors(parserResult.getReports());
 
         // Print AST
-        //System.out.println(parserResult.getRootNode().toTree());
+        System.out.println(parserResult.getRootNode().toTree());
 
+        /*
         // Semantic Analysis stage
         JmmAnalysisImpl sema = new JmmAnalysisImpl();
         JmmSemanticsResult semanticsResult = sema.semanticAnalysis(parserResult);
@@ -56,6 +59,7 @@ public class Launcher {
 
         // Print Jasmin code
         //System.out.println(jasminResult.getJasminCode());
+        */
     }
 
 }
