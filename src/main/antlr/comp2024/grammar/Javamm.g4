@@ -50,7 +50,7 @@ SINGLE_LINE_COMMENT : ('//' .*? '\n') -> skip;
 MULTI_LINE_COMMENT: ('/*' .*? '*/') -> skip;
 
 program
-    : importList+=importDecl* class=classDecl EOF
+    : importDecl* classDeclaration=classDecl EOF
     ;
 
 importDecl
@@ -60,8 +60,8 @@ importDecl
 classDecl
     : CLASS name=ID (EXTENDS extended_name=ID)?
         LCURLY
-        varList+=varDecl*
-        methodList+=methodDecl*
+        varDecl*
+        methodDecl*
         RCURLY
     ;
 
@@ -73,11 +73,11 @@ methodDecl locals[boolean isPublic=false]
     : (PUBLIC {$isPublic=true;})?
         methodType=type name=ID
         LPAREN parameters+=param(',' parameters+=param)* RPAREN
-        LCURLY vars+=varDecl* stmts+=stmt* RETURN returnExpr=expr SEMI RCURLY #OtherMethod
+        LCURLY varDecl* stmt* RETURN returnExpr=expr SEMI RCURLY #OtherMethod
     | (PUBLIC {$isPublic=true;})?
         STATIC VOID MAIN
         LPAREN STRING LSQUARE RSQUARE parameter=ID RPAREN
-        LCURLY vars+=varDecl* stmts+=stmt* RCURLY #MainMethod
+        LCURLY varDecl* stmt* RCURLY #MainMethod
     ;
 
 type
@@ -85,6 +85,7 @@ type
     | INT ELLIPSIS #VarArgs
     | BOOLEAN #Boolean
     | INT #Int
+    | name=STRING #OtherClasses
     | name=ID #OtherClasses
     ;
 
@@ -93,7 +94,7 @@ param
     ;
 
 stmt
-    : LCURLY stmts+=stmt* RCURLY #StmtGroup
+    : LCURLY stmt* RCURLY #StmtGroup
     | IF LPAREN condition=expr RPAREN ifBody=stmt ELSE elseBody=stmt #IfStmt
     | WHILE LPAREN condition=expr RPAREN body=stmt #WhileStmt
     | expr SEMI #ExprStmt
@@ -102,21 +103,25 @@ stmt
     ;
 
 expr
-    : EXCL expr #NotExpr
+    : LPAREN expr RPAREN #ParenExpr
+    | EXCL expr #NotExpr
     | left=expr op=(MUL | DIV) right=expr #BinaryExpr
     | left=expr op=(ADD | SUB) right=expr #BinaryExpr
     | left=expr op=LT right=expr #BinaryExpr
     | left=expr op=AND right=expr #BinaryExpr
     | name=expr LSQUARE index=expr RSQUARE #ArrayIndexExpr
     | expr '.' LENGTH #LenExpr
-    | object=expr '.' method=ID LPAREN (args+=expr(',' args+=expr)*)? RPAREN #MethodCallExpr
+    | object=expr '.' method=ID LPAREN arglist? RPAREN #MethodCallExpr
     | NEW INT LSQUARE size=expr RSQUARE #NewArrayExpr
-    | NEW name=ID LPAREN RPAREN #NewObjExpr
-    | LPAREN expr RPAREN #ParenExpr
+    | NEW id=ID LPAREN RPAREN #NewObjExpr
     | LSQUARE (elems+=expr(',' elems+=expr)*)? RSQUARE #ArrayDeclExpr
     | value=INTEGER #IntLiteralExpr
     | TRUE #TrueLiteralExpr
     | FALSE #FalseLiteralExpr
-    | name=ID #IDLiteralExpr
+    | id=ID #IDLiteralExpr
     | THIS #ThisExpr
+    ;
+
+arglist
+    : args+=expr(',' args+=expr)*
     ;
