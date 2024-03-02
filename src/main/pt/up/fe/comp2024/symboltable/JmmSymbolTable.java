@@ -13,18 +13,27 @@ import java.util.Map;
 public class JmmSymbolTable implements SymbolTable {
 
     private final String className;
+    private final String superName;
+    private final List<String> imports;
     private final List<String> methods;
+    private final List<Symbol> fields;
     private final Map<String, Type> returnTypes;
     private final Map<String, List<Symbol>> params;
     private final Map<String, List<Symbol>> locals;
 
     public JmmSymbolTable(String className,
+                          String superName,
+                          List<String> imports,
                           List<String> methods,
+                          List<Symbol> fields,
                           Map<String, Type> returnTypes,
                           Map<String, List<Symbol>> params,
                           Map<String, List<Symbol>> locals) {
         this.className = className;
+        this.superName = superName;
+        this.imports = imports;
         this.methods = methods;
+        this.fields = fields;
         this.returnTypes = returnTypes;
         this.params = params;
         this.locals = locals;
@@ -32,7 +41,7 @@ public class JmmSymbolTable implements SymbolTable {
 
     @Override
     public List<String> getImports() {
-        throw new NotImplementedException();
+        return this.imports;
     }
 
     @Override
@@ -42,23 +51,22 @@ public class JmmSymbolTable implements SymbolTable {
 
     @Override
     public String getSuper() {
-        throw new NotImplementedException();
+        return this.superName;
     }
 
     @Override
     public List<Symbol> getFields() {
-        throw new NotImplementedException();
+        return this.fields;
     }
 
     @Override
     public List<String> getMethods() {
-        return Collections.unmodifiableList(methods);
+        return this.methods;
     }
 
     @Override
     public Type getReturnType(String methodSignature) {
-        // TODO: Simple implementation that needs to be expanded
-        return new Type(TypeUtils.getIntTypeName(), false);
+        return this.returnTypes.get(methodSignature);
     }
 
     @Override
@@ -71,4 +79,17 @@ public class JmmSymbolTable implements SymbolTable {
         return Collections.unmodifiableList(locals.get(methodSignature));
     }
 
+    @Override
+    public String toString() {
+        return "JmmSymbolTable{" +
+                "className='" + className + '\'' +
+                ", superName='" + superName + '\'' +
+                ", imports=" + imports +
+                ", methods=" + methods +
+                ", fields=" + fields +
+                ", returnTypes=" + returnTypes +
+                ", params=" + params +
+                ", locals=" + locals +
+                '}';
+    }
 }

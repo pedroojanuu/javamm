@@ -7,9 +7,21 @@ import pt.up.fe.comp.jmm.ast.JmmNode;
 public class TypeUtils {
 
     private static final String INT_TYPE_NAME = "int";
+    private static final String BOOLEAN_TYPE_NAME = "boolean";
+    private static final String VOID_TYPE_NAME = "void";
+    private static final String STRING_TYPE_NAME = "String";
 
     public static String getIntTypeName() {
         return INT_TYPE_NAME;
+    }
+    public static String getBooleanTypeName() {
+        return BOOLEAN_TYPE_NAME;
+    }
+    public static String getVoidTypeName() {
+        return VOID_TYPE_NAME;
+    }
+    public static String getStringTypeName() {
+        return STRING_TYPE_NAME;
     }
 
     /**
@@ -40,7 +52,9 @@ public class TypeUtils {
         String operator = binaryExpr.get("op");
 
         return switch (operator) {
-            case "+", "*" -> new Type(INT_TYPE_NAME, false);
+            case "+", "-", "/", "*" -> new Type(INT_TYPE_NAME, false);
+            case "<" -> new Type(BOOLEAN_TYPE_NAME, false);
+
             default ->
                     throw new RuntimeException("Unknown operator '" + operator + "' of expression '" + binaryExpr + "'");
         };

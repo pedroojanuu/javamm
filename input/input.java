@@ -1,5 +1,8 @@
 import io;
 class Factorial {
+    int a;
+    int... b;
+    String a;
     public int computeFactorial(int num){
         int num_aux ;
         if (num < 1)

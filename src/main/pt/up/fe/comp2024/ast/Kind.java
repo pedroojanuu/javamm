@@ -8,10 +8,18 @@ import java.util.Set;
 
 public enum Kind {
     PROGRAM,
+    IMPORT_DECL,
     CLASS_DECL,
     VAR_DECL,
     TYPE,
     METHOD_DECL,
+    OTHER_METHOD,
+    MAIN_METHOD,
+    INT_ARRAY,
+    VAR_ARGS,
+    BOOLEAN,
+    INT,
+    OTHER_CLASSES,
     PARAM,
     ASSIGN_STMT,
     RETURN_STMT,

@@ -35,15 +35,18 @@ public class Launcher {
         TestUtils.noErrors(parserResult.getReports());
 
         // Print AST
-        System.out.println(parserResult.getRootNode().toTree());
+        // System.out.println(parserResult.getRootNode().toTree());
 
-        /*
+
         // Semantic Analysis stage
         JmmAnalysisImpl sema = new JmmAnalysisImpl();
         JmmSemanticsResult semanticsResult = sema.semanticAnalysis(parserResult);
         TestUtils.noErrors(semanticsResult.getReports());
 
-
+        // print the contents of the symbol table (e.g. imports, ...)
+        var symbolTable = semanticsResult.getSymbolTable();
+        System.out.println(symbolTable);
+    /*
         // Optimization stage
         JmmOptimizationImpl ollirGen = new JmmOptimizationImpl();
         OllirResult ollirResult = ollirGen.toOllir(semanticsResult);

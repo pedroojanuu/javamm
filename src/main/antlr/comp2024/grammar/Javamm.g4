@@ -72,11 +72,11 @@ varDecl
 methodDecl locals[boolean isPublic=false]
     : (PUBLIC {$isPublic=true;})?
         methodType=type name=ID
-        LPAREN parameters+=param(',' parameters+=param)* RPAREN
+        LPAREN (param (',' param)*)? RPAREN
         LCURLY varDecl* stmt* RETURN returnExpr=expr SEMI RCURLY #OtherMethod
     | (PUBLIC {$isPublic=true;})?
-        STATIC VOID MAIN
-        LPAREN STRING LSQUARE RSQUARE parameter=ID RPAREN
+        STATIC methodType=VOID name=MAIN
+        LPAREN STRING LSQUARE RSQUARE parameterName=ID RPAREN
         LCURLY varDecl* stmt* RCURLY #MainMethod
     ;
 
@@ -104,22 +104,22 @@ stmt
 
 expr
     : LPAREN expr RPAREN #ParenExpr
+    | name=expr LSQUARE index=expr RSQUARE #ArrayIndexExpr
+    | object=expr '.' method=ID LPAREN arglist? RPAREN #MethodCallExpr
+    | expr '.' LENGTH #LenExpr
     | EXCL expr #NotExpr
+    | NEW INT LSQUARE size=expr RSQUARE #NewArrayExpr
+    | NEW id=ID LPAREN RPAREN #NewObjExpr
     | left=expr op=(MUL | DIV) right=expr #BinaryExpr
     | left=expr op=(ADD | SUB) right=expr #BinaryExpr
     | left=expr op=LT right=expr #BinaryExpr
     | left=expr op=AND right=expr #BinaryExpr
-    | name=expr LSQUARE index=expr RSQUARE #ArrayIndexExpr
-    | expr '.' LENGTH #LenExpr
-    | object=expr '.' method=ID LPAREN arglist? RPAREN #MethodCallExpr
-    | NEW INT LSQUARE size=expr RSQUARE #NewArrayExpr
-    | NEW id=ID LPAREN RPAREN #NewObjExpr
-    | LSQUARE (elems+=expr(',' elems+=expr)*)? RSQUARE #ArrayDeclExpr
     | value=INTEGER #IntLiteralExpr
     | TRUE #TrueLiteralExpr
     | FALSE #FalseLiteralExpr
     | id=ID #IDLiteralExpr
     | THIS #ThisExpr
+    | LSQUARE (elems+=expr (',' elems+=expr)*)? RSQUARE #ArrayDeclExpr
     ;
 
 arglist
