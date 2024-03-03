@@ -1,4 +1,4 @@
-
+import io.nothing.hello;
 class MethodsAndFields extends MyClass {
     int field1;
     boolean field2;

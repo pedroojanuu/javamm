@@ -21,21 +21,19 @@ AND : '&&';
 LT : '<';
 EXCL : '!';
 
+// Reserved words
 IMPORT : 'import';
 CLASS : 'class';
 EXTENDS : 'extends';
 PUBLIC : 'public';
 RETURN : 'return';
 STATIC : 'static';
-MAIN : 'main';
 VOID : 'void';
-STRING : 'String';
 INT : 'int';
 BOOLEAN : 'boolean';
 IF : 'if';
 ELSE : 'else';
 WHILE : 'while';
-LENGTH : 'length';
 NEW : 'new';
 TRUE : 'true';
 FALSE : 'false';
@@ -75,8 +73,8 @@ methodDecl locals[boolean isPublic=false]
         LPAREN (param (',' param)*)? RPAREN
         LCURLY varDecl* stmt* RETURN returnExpr=expr SEMI RCURLY #OtherMethod
     | (PUBLIC {$isPublic=true;})?
-        STATIC methodType=VOID name=MAIN
-        LPAREN STRING LSQUARE RSQUARE parameterName=ID RPAREN
+        STATIC methodType=VOID name=ID  // name="main"
+        LPAREN ID LSQUARE RSQUARE parameterName=ID RPAREN   // String[]
         LCURLY varDecl* stmt* RCURLY #MainMethod
     ;
 
@@ -85,7 +83,6 @@ type
     | INT ELLIPSIS #VarArgs
     | BOOLEAN #Boolean
     | INT #Int
-    | name=STRING #OtherClasses
     | name=ID #OtherClasses
     ;
 
@@ -106,7 +103,7 @@ expr
     : LPAREN expr RPAREN #ParenExpr
     | name=expr LSQUARE index=expr RSQUARE #ArrayIndexExpr
     | object=expr '.' method=ID LPAREN arglist? RPAREN #MethodCallExpr
-    | expr '.' LENGTH #LenExpr
+    | expr '.' ID #LenExpr  // array.length
     | EXCL expr #NotExpr
     | NEW INT LSQUARE size=expr RSQUARE #NewArrayExpr
     | NEW id=ID LPAREN RPAREN #NewObjExpr
