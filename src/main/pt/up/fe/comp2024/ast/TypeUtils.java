@@ -1,5 +1,6 @@
 package pt.up.fe.comp2024.ast;
 
+import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
@@ -10,7 +11,15 @@ public class TypeUtils {
     private static final String BOOLEAN_TYPE_NAME = "boolean";
     private static final String VOID_TYPE_NAME = "void";
     private static final String STRING_TYPE_NAME = "String";
-
+    public static Type getIntType() {
+        return new Type(INT_TYPE_NAME, false);
+    }
+    public static Type getBooleanType() {
+        return new Type(BOOLEAN_TYPE_NAME, false);
+    }
+    public static Type getVoidType() {
+        return new Type(VOID_TYPE_NAME, false);
+    }
     public static String getIntTypeName() {
         return INT_TYPE_NAME;
     }
@@ -24,6 +33,37 @@ public class TypeUtils {
         return STRING_TYPE_NAME;
     }
 
+    private static boolean isLocal(String name, String currentMethod, SymbolTable table) {
+        return table.getLocalVariables(currentMethod).stream()
+                .anyMatch(varDecl -> varDecl.getName().equals(name));
+    }
+    private static Symbol getLocal(String name, String currentMethod, SymbolTable table) {
+        return table.getLocalVariables(currentMethod).stream()
+                .filter(varDecl -> varDecl.getName().equals(name))
+                .findFirst()
+                .orElse(null);
+    }
+    private static boolean isParam(String name, String currentMethod, SymbolTable table) {
+        return table.getParameters(currentMethod).stream()
+                .anyMatch(param -> param.getName().equals(name));
+    }
+    private static Symbol getParam(String name, String currentMethod, SymbolTable table) {
+        return table.getParameters(currentMethod).stream()
+                .filter(param -> param.getName().equals(name))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static boolean isField(String name, SymbolTable table) {
+        return table.getFields().stream()
+                .anyMatch(f -> f.getName().equals(name));
+    }
+    private static Symbol getField(String name, SymbolTable table) {
+        return table.getFields().stream()
+                .filter(f -> f.getName().equals(name))
+                .findFirst()
+                .orElse(null);
+    }
     /**
      * Gets the {@link Type} of an arbitrary expression.
      *
@@ -31,29 +71,25 @@ public class TypeUtils {
      * @param table
      * @return
      */
-    public static Type getExprType(JmmNode expr, SymbolTable table) {
+    public static Type getExprType(JmmNode expr, SymbolTable table, String currentMethod) {
         // TODO: Simple implementation that needs to be expanded
 
         var kind = Kind.fromString(expr.getKind());
-
-        Type type = switch (kind) {
+        System.out.println(kind);
+        return switch (kind) {
             case BINARY_EXPR -> getBinExprType(expr);
-            case VAR_REF_EXPR -> getVarExprType(expr, table);
-            case INTEGER_LITERAL -> new Type(INT_TYPE_NAME, false);
+            case ID_LITERAL_EXPR -> getIdLiteralExprType(expr, table, currentMethod);
+            case INT_LITERAL_EXPR -> getIntType();
             default -> throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'");
         };
-
-        return type;
     }
 
     private static Type getBinExprType(JmmNode binaryExpr) {
-        // TODO: Simple implementation that needs to be expanded
-
         String operator = binaryExpr.get("op");
 
         return switch (operator) {
-            case "+", "-", "/", "*" -> new Type(INT_TYPE_NAME, false);
-            case "<" -> new Type(BOOLEAN_TYPE_NAME, false);
+            case "+", "-", "/", "*" -> getIntType();
+            case "<" -> getBooleanType();
 
             default ->
                     throw new RuntimeException("Unknown operator '" + operator + "' of expression '" + binaryExpr + "'");
@@ -61,9 +97,21 @@ public class TypeUtils {
     }
 
 
-    private static Type getVarExprType(JmmNode varRefExpr, SymbolTable table) {
-        // TODO: Simple implementation that needs to be expanded
-        return new Type(INT_TYPE_NAME, false);
+    private static Type getIdLiteralExprType(JmmNode idLiteralExpr, SymbolTable table, String currentMethod) {
+        var name = idLiteralExpr.get("id");
+
+        if (isLocal(name, currentMethod, table)) {
+            return getLocal(name, currentMethod, table).getType();
+        }
+
+        if (isParam(name, currentMethod, table)) {
+            return getParam(name, currentMethod, table).getType();
+        }
+
+        if (isField(name, table)) {
+            return getField(name, table).getType();
+        }
+        throw new RuntimeException("Unknown variable '" + name + "'");
     }
 
 

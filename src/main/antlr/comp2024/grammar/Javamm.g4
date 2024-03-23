@@ -114,7 +114,7 @@ expr
     | value=INTEGER #IntLiteralExpr
     | TRUE #TrueLiteralExpr
     | FALSE #FalseLiteralExpr
-    | id=ID #IDLiteralExpr
+    | id=ID #IdLiteralExpr
     | THIS #ThisExpr
     | LSQUARE (elems+=expr (',' elems+=expr)*)? RSQUARE #ArrayDeclExpr
     ;
