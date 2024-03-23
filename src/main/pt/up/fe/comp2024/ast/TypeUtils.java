@@ -4,6 +4,7 @@ import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
+import pt.up.fe.comp2024.symboltable.SymbolTableUtils;
 
 public class TypeUtils {
 
@@ -96,7 +97,7 @@ public class TypeUtils {
             case THIS_EXPR -> getMyClassType(table.getClassName(), table.getSuper());
             case NEW_OBJ_EXPR -> getNewObjExprType(expr, table);
             case METHOD_CALL_EXPR -> getMethodCallExprType(expr, table, currentMethod);
-            case NEW_ARRAY_EXPR -> getIntArrayType();
+            case NEW_ARRAY_EXPR, ARRAY_DECL_EXPR -> getIntArrayType();
             case BOOLEAN_LITERAL_EXPR -> getBooleanType();
             default -> throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'");
         };
@@ -131,6 +132,8 @@ public class TypeUtils {
             var argList = methodCallExpr.getChild(methodCallExpr.getNumChildren() - 1);
             var paramsST = table.getParameters(methodName);
             int varArgsIdx = 0;
+            // If the calling method accepts varargs, it can accept both a variable number of arguments of
+            // the same type as an array, or directly an array
             for (int i = 0; i < paramsST.size(); i++) {
                 var paramType = paramsST.get(i).getType();
                 var argType = getExprType(argList.getChild(i), table, currentMethod);
@@ -138,13 +141,17 @@ public class TypeUtils {
                     varArgsIdx = i;
                     break;
                 }
-                if (!areTypesAssignable(argType, paramType)) {
+                if (!areTypesAssignable(argType, paramType, table)) {
                     return invalidArgumentsMessage;
                 }
             }
+            var argType = getExprType(argList.getChild(varArgsIdx), table, currentMethod);
+            if (argType.equals(getIntArrayType())) {
+                return null;
+            }
             for (int i = varArgsIdx; i < argList.getNumChildren(); i++) {
-                var argType = getExprType(argList.getChild(i), table, currentMethod);
-                if (!areTypesAssignable(argType, getIntType())) {   // just compare to int
+                argType = getExprType(argList.getChild(i), table, currentMethod);
+                if (!areTypesAssignable(argType, getIntType(), table)) {   // just compare to int
                     return invalidArgumentsMessage;
                 }
             }
@@ -152,8 +159,7 @@ public class TypeUtils {
         }
 
         // assume that methods from imports are valid
-        if (table.getImports().stream()
-                .anyMatch(imp -> imp.equals(objectType.getName()))) {
+        if (SymbolTableUtils.hasImport(table, objectType.getName())) {
             return null;
         }
         return defaultErrorMessage;
@@ -164,7 +170,7 @@ public class TypeUtils {
         var objectType = getExprType(object, table, currentMethod);
 
         // e.g.: this.method(params); a = this, a.method(params);
-        if (objectType.getName().equals(table.getClassName())) {
+        if (table.getClassName().equals(objectType.getName())) {
             var method = table.getMethods().stream()
                     .filter(m -> m.equals(methodName))
                     .findFirst()
@@ -176,7 +182,11 @@ public class TypeUtils {
 
             return table.getReturnType(method);
         }
-        // will probably have to deal with imports
+
+        // assume that methods from imports are valid
+        if (SymbolTableUtils.hasImport(table, objectType.getName())) {
+            return null;    // needs to be handled
+        }
         throw new RuntimeException("Unknown method '" + methodName + "'");
     }
     public static Type getNewObjExprType(JmmNode newObjExpr, SymbolTable table) {
@@ -235,8 +245,13 @@ public class TypeUtils {
      * @param destinationType
      * @return true if sourceType can be assigned to destinationType
      */
-    public static boolean areTypesAssignable(Type sourceType, Type destinationType) {
-        // TODO: or they both come from imports
-        return sourceType.getName().equals(destinationType.getName()) || typeInherits(sourceType, destinationType);
+    public static boolean areTypesAssignable(Type sourceType, Type destinationType, SymbolTable table) {
+        if (sourceType == null || destinationType == null ||
+                sourceType.getName().equals(destinationType.getName()) || typeInherits(sourceType, destinationType)) {
+            return true;
+        }
+
+        // both from imports: assume correct assignment
+        return SymbolTableUtils.hasImport(table, sourceType.getName()) && SymbolTableUtils.hasImport(table, destinationType.getName());
     }
 }

@@ -1,24 +1,21 @@
 package pt.up.fe.comp2024.analysis.passes;
 
 import pt.up.fe.comp2024.analysis.AnalysisVisitor;
-import pt.up.fe.comp.jmm.analysis.table.Type;
-import pt.up.fe.comp2024.analysis.AnalysisVisitor;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.ast.JmmNode;
-import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2024.ast.Kind;
-import pt.up.fe.comp2024.ast.NodeUtils;
 import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.comp2024.utils.ReportUtils;
 
-public class ArrayAccess extends AnalysisVisitor {
+public class Arrays extends AnalysisVisitor {
     private String currentMethod;
     @Override
     protected void buildVisitor() {
         addVisit(Kind.METHOD_DECL, this::visitMethodDecl);
         addVisit(Kind.ARRAY_INDEX_EXPR, this::visitArrayAccess);
         addVisit(Kind.MEMBER_ACCESS_EXPR, this::visitMemberAccess);
+        addVisit(Kind.ARRAY_DECL_EXPR, this::visitArrayDecl);
     }
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
@@ -45,6 +42,17 @@ public class ArrayAccess extends AnalysisVisitor {
 
         if (member.equals("length") && !leftExprType.isArray()) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, leftExpr, "Access length on non-array type"));
+        }
+        return null;
+    }
+    private Void visitArrayDecl(JmmNode method, SymbolTable table) {
+        var elements = method.getChildren();
+        for (var element : elements) {
+            var elementType = TypeUtils.getExprType(element, table, currentMethod);
+            if (!elementType.equals(TypeUtils.getIntType())) {
+                addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, element, "Array elements must be of type int"));
+                break;
+            }
         }
         return null;
     }

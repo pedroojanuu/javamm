@@ -117,7 +117,7 @@ expr
     | value=FALSE #BooleanLiteralExpr
     | id=ID #IdLiteralExpr
     | THIS #ThisExpr
-    | LSQUARE (elems+=expr (',' elems+=expr)*)? RSQUARE #ArrayDeclExpr
+    | LSQUARE (expr (',' expr)* )? RSQUARE #ArrayDeclExpr
     ;
 
 arglist

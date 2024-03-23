@@ -35,6 +35,7 @@ public enum Kind {
     NEW_ARRAY_EXPR,
     METHOD_CALL_EXPR,
     BOOLEAN_LITERAL_EXPR,
+    ARRAY_DECL_EXPR,
     ;
 
     private static final Set<Kind> STATEMENTS = Set.of(ASSIGN_STMT, RETURN_STMT);

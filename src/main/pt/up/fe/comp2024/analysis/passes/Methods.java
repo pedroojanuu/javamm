@@ -29,7 +29,7 @@ public class Methods extends AnalysisVisitor {
         var returnType = TypeUtils.getExprType(method.getObject("returnExpr", JmmNode.class), table, method.get("name"));
         var methodType = table.getReturnType(method.get("name"));
 
-        if (!TypeUtils.areTypesAssignable(returnType, methodType)) {
+        if (!TypeUtils.areTypesAssignable(returnType, methodType, table)) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, method, "Method return type does not match the declared type"));
         }
         return null;
