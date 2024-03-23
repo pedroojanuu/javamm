@@ -119,7 +119,7 @@ public class TypeUtils {
         var objectType = getExprType(object, table, currentMethod);
 
         // e.g.: this.method(params); a = this, a.method(params);
-        if (objectType.getName().equals(table.getClassName())) {
+        if (table.getClassName().equals(getName(objectType))) {
             boolean methodExists = table.getMethods().stream()
                     .anyMatch(m -> m.equals(methodName));
             if (!methodExists) {
@@ -131,7 +131,7 @@ public class TypeUtils {
             }
             var argList = methodCallExpr.getChild(methodCallExpr.getNumChildren() - 1);
             var paramsST = table.getParameters(methodName);
-            int varArgsIdx = 0;
+            int varArgsIdx = -1;
             // If the calling method accepts varargs, it can accept both a variable number of arguments of
             // the same type as an array, or directly an array
             for (int i = 0; i < paramsST.size(); i++) {
@@ -145,8 +145,15 @@ public class TypeUtils {
                     return invalidArgumentsMessage;
                 }
             }
+            if (varArgsIdx == -1) {
+                if (argList.getNumChildren() != paramsST.size()) {
+                    return invalidArgumentsMessage;
+                }
+                return null;
+            }
+
             var argType = getExprType(argList.getChild(varArgsIdx), table, currentMethod);
-            if (argType.equals(getIntArrayType())) {
+            if (getIntArrayType().equals(argType)) {
                 return null;
             }
             for (int i = varArgsIdx; i < argList.getNumChildren(); i++) {
@@ -159,10 +166,15 @@ public class TypeUtils {
         }
 
         // assume that methods from imports are valid
-        if (SymbolTableUtils.hasImport(table, objectType.getName())) {
+        var importId = object.getOptional("id").orElse(null);
+        if (SymbolTableUtils.hasImport(table, importId) || SymbolTableUtils.hasImport(table, getName(objectType))) {
             return null;
         }
         return defaultErrorMessage;
+    }
+
+    private static String getName(Type type) {
+        return type == null ? null : type.getName();
     }
     public static Type getMethodCallExprType(JmmNode methodCallExpr, SymbolTable table, String currentMethod) {
         var methodName = methodCallExpr.get("method");
@@ -170,7 +182,7 @@ public class TypeUtils {
         var objectType = getExprType(object, table, currentMethod);
 
         // e.g.: this.method(params); a = this, a.method(params);
-        if (table.getClassName().equals(objectType.getName())) {
+        if (table.getClassName().equals(getName(objectType))) {
             var method = table.getMethods().stream()
                     .filter(m -> m.equals(methodName))
                     .findFirst()
@@ -184,7 +196,7 @@ public class TypeUtils {
         }
 
         // assume that methods from imports are valid
-        if (SymbolTableUtils.hasImport(table, objectType.getName())) {
+        if (SymbolTableUtils.hasImport(table, getName(objectType))) {
             return null;    // needs to be handled
         }
         throw new RuntimeException("Unknown method '" + methodName + "'");
@@ -232,6 +244,11 @@ public class TypeUtils {
         if (isField(id, table)) {
             return getField(id, table).getType();
         }
+
+        if (SymbolTableUtils.hasImport(table, id)) {
+            return null;
+        }
+
         throw new RuntimeException("Unknown variable '" + id + "'");
     }
     public static Type getIdLiteralExprType(JmmNode idLiteralExpr, SymbolTable table, String currentMethod) {

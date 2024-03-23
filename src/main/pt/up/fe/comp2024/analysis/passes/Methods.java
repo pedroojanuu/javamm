@@ -38,7 +38,7 @@ public class Methods extends AnalysisVisitor {
         setCurrentMethodName(method);
 
         var paramType = method.get("paramType");
-        String generalMessage = " A void method must always be static and be called main.";
+        String generalMessage = "A void method must always be static and be called main.";
         if (!paramType.equals("String")) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, method, generalMessage + "It must have a String[] parameter"));
         }
