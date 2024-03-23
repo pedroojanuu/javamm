@@ -8,6 +8,7 @@ import pt.up.fe.comp2024.ast.Kind;
 import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.specs.util.SpecsCheck;
 
+import javax.lang.model.type.NullType;
 import java.util.*;
 
 
@@ -24,10 +25,10 @@ public class JmmSymbolTableBuilder {
 
         var imports = buildImports(root);
         var methods = buildMethods(classDecl);
-        var fields = buildFields(classDecl);
-        var returnTypes = buildReturnTypes(classDecl);
-        var params = buildParams(classDecl);
-        var locals = buildLocals(classDecl);
+        var fields = buildFields(classDecl, className, superName);
+        var returnTypes = buildReturnTypes(classDecl, className, superName);
+        var params = buildParams(classDecl, className, superName);
+        var locals = buildLocals(classDecl, className, superName);
 
         return new JmmSymbolTable(className, superName, imports, methods, fields, returnTypes, params, locals);
     }
@@ -42,27 +43,28 @@ public class JmmSymbolTableBuilder {
         }
         return "";
     }
-    private static Map<String, Type> buildReturnTypes(JmmNode classDecl) {
+    private static Map<String, Type> buildReturnTypes(JmmNode classDecl, String className, String superName) {
         Map<String, Type> map = new HashMap<>();
 
         classDecl.getChildren(Kind.OTHER_METHOD)
-                .forEach(method -> map.put(method.get("name"), getType(method.getObject("methodType", JmmNode.class))));
+                .forEach(method -> map.put(method.get("name"), getType(method.getObject("methodType", JmmNode.class), className, superName)));
 
         classDecl.getChildren(Kind.MAIN_METHOD)
                 .forEach(method -> map.put(method.get("name"), new Type(TypeUtils.getVoidTypeName(), false)));
 
         return map;
     }
-    private static List<Symbol> buildFields(JmmNode classDecl) {
-        return buildVarDecls(classDecl);
+    private static List<Symbol> buildFields(JmmNode classDecl, String className, String superName) {
+        return buildVarDecls(classDecl, className, superName);
     }
-    private static List<Symbol> buildVarDecls(JmmNode node) {
+    private static List<Symbol> buildVarDecls(JmmNode node, String className, String superName) {
         return node.getChildren(Kind.VAR_DECL).stream()
-                .map(varDecl -> new Symbol(getType(varDecl.getObject("varType", JmmNode.class)), varDecl.get("name")))
+                .map(varDecl -> new Symbol(getType(varDecl.getObject("varType", JmmNode.class), className, superName), varDecl.get("name")))
                 .toList();
     }
-    private static Type getType(JmmNode type) {
-        switch (Kind.fromString(type.getKind())) {
+    private static Type getType(JmmNode node, String className, String superName) {
+        Type type;
+        switch (Kind.fromString(node.getKind())) {
             case INT_ARRAY, VAR_ARGS -> {
                 return new Type(TypeUtils.getIntTypeName(), true);
             }
@@ -73,21 +75,26 @@ public class JmmSymbolTableBuilder {
                 return new Type(TypeUtils.getIntTypeName(), false);
             }
             case OTHER_CLASSES -> {
-                return new Type(type.get("name"), false);
+                if (node.get("name").equals(className)) {
+                    type = new Type(node.get("name"), false);
+                    type.putObject("super", superName);
+                    return type;
+                }
+                return new Type(node.get("name"), false);
             }
-            default -> throw new RuntimeException("Unknown kind of varDecl: " + type.getKind());
+            default -> throw new RuntimeException("Unknown kind of varDecl: " + node.getKind());
         }
     }
-    private static List<Symbol> getParamsList(JmmNode method) {
+    private static List<Symbol> getParamsList(JmmNode method, String className, String superName) {
         return method.getChildren(Kind.PARAM).stream()
-                .map(param -> new Symbol(getType(param.getObject("paramType", JmmNode.class)), param.get("name")))
+                .map(param -> new Symbol(getType(param.getObject("paramType", JmmNode.class), className, superName), param.get("name")))
                 .toList();
     }
-    private static Map<String, List<Symbol>> buildParams(JmmNode classDecl) {
+    private static Map<String, List<Symbol>> buildParams(JmmNode classDecl, String className, String superName) {
         Map<String, List<Symbol>> map = new HashMap<>();
 
         classDecl.getChildren(Kind.OTHER_METHOD)
-                .forEach(method -> map.put(method.get("name"), getParamsList(method)));
+                .forEach(method -> map.put(method.get("name"), getParamsList(method, className, superName)));
 
         classDecl.getChildren(Kind.MAIN_METHOD)
                 .forEach(method -> map.put(method.get("name"),
@@ -112,15 +119,15 @@ public class JmmSymbolTableBuilder {
             addAll(methods);
         }};
     }
-    private static Map<String, List<Symbol>> buildLocals(JmmNode classDecl) {
+    private static Map<String, List<Symbol>> buildLocals(JmmNode classDecl, String className, String superName) {
         Map<String, List<Symbol>> map = new HashMap<>();
 
         classDecl.getChildren(Kind.METHOD_DECL)
-                .forEach(method -> map.put(method.get("name"), getLocalsList(method)));
+                .forEach(method -> map.put(method.get("name"), getLocalsList(method, className, superName)));
 
         return map;
     }
-    private static List<Symbol> getLocalsList(JmmNode methodDecl) {
-        return buildVarDecls(methodDecl);
+    private static List<Symbol> getLocalsList(JmmNode methodDecl, String className, String superName) {
+        return buildVarDecls(methodDecl, className, superName);
     }
 }

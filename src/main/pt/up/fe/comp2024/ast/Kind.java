@@ -28,7 +28,11 @@ public enum Kind {
     ID_LITERAL_EXPR,
     WHILE_STMT,
     IF_STMT,
-    ARRAY_INDEX_EXPR
+    ARRAY_INDEX_EXPR,
+    THIS_EXPR,
+    MEMBER_ACCESS_EXPR,
+    NEW_OBJ_EXPR,
+    NEW_ARRAY_EXPR,
     ;
 
     private static final Set<Kind> STATEMENTS = Set.of(ASSIGN_STMT, RETURN_STMT);

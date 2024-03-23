@@ -17,21 +17,33 @@ public class ArrayAccess extends AnalysisVisitor {
     protected void buildVisitor() {
         addVisit(Kind.METHOD_DECL, this::visitMethodDecl);
         addVisit(Kind.ARRAY_INDEX_EXPR, this::visitArrayAccess);
+        addVisit(Kind.MEMBER_ACCESS_EXPR, this::visitMemberAccess);
     }
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
         return null;
     }
+
     private Void visitArrayAccess(JmmNode method, SymbolTable table) {
         var array = method.getObject("name", JmmNode.class);
         var index = method.getObject("index", JmmNode.class);
         var arrayType = TypeUtils.getExprType(array, table, currentMethod);
         var indexType = TypeUtils.getExprType(index, table, currentMethod);
         if (!arrayType.isArray()) {
-            addReport(Report.newError(Stage.SEMANTIC, NodeUtils.getLine(array), NodeUtils.getColumn(array), "Array access on non-array type", null));
+            addReportNoException(array, "Array access on non-array type");
         }
         if (!indexType.equals(TypeUtils.getIntType())) {
-            addReport(Report.newError(Stage.SEMANTIC, NodeUtils.getLine(index), NodeUtils.getColumn(index), "Array index must be of type int", null));
+            addReportNoException(index, "Array index must be of type int");
+        }
+        return null;
+    }
+    private Void visitMemberAccess(JmmNode method, SymbolTable table) {
+        var leftExpr = method.getObject("left", JmmNode.class);
+        String member = method.get("member");
+        var leftExprType = TypeUtils.getExprType(leftExpr, table, currentMethod);
+
+        if (member.equals("length") && !leftExprType.isArray()) {
+            addReportNoException(leftExpr, "Access length on non-array type");
         }
         return null;
     }

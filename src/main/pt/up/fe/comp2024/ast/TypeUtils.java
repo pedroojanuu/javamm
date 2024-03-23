@@ -20,6 +20,14 @@ public class TypeUtils {
     public static Type getVoidType() {
         return new Type(VOID_TYPE_NAME, false);
     }
+    public static Type getMyClassType(String name, String superName) {
+        var type = new Type(name, false);
+        type.putObject("super", superName);
+        System.out.println("here");
+        System.out.println(type.getObject("super"));
+        System.out.println("after here");
+        return type;
+    }
     public static String getIntTypeName() {
         return INT_TYPE_NAME;
     }
@@ -72,18 +80,36 @@ public class TypeUtils {
      * @return
      */
     public static Type getExprType(JmmNode expr, SymbolTable table, String currentMethod) {
-        // TODO: Simple implementation that needs to be expanded
-
         var kind = Kind.fromString(expr.getKind());
-        System.out.println(kind);
         return switch (kind) {
             case BINARY_EXPR -> getBinExprType(expr);
             case ID_LITERAL_EXPR -> getIdLiteralExprType(expr, table, currentMethod);
             case INT_LITERAL_EXPR -> getIntType();
+            case MEMBER_ACCESS_EXPR -> getMemberAccessExprType(expr, table, currentMethod);
+            case THIS_EXPR -> getMyClassType(table.getClassName(), table.getSuper());
+            case NEW_OBJ_EXPR -> getNewObjExprType(expr, table, currentMethod);
             default -> throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'");
         };
     }
+    public static Type getNewObjExprType(JmmNode newObjExpr, SymbolTable table, String currentMethod) {
+        var className = newObjExpr.get("id");
+        if (table.getClassName().equals(className)) {
+            return getMyClassType(className, table.getSuper());
+        }
+        return getMyClassType(className, "");
+    }
+    public static Type getMemberAccessExprType(JmmNode memberAccessExpr, SymbolTable table, String currentMethod) {
+        var member = memberAccessExpr.get("member");
+        if (member.equals("length")) {
+            return getIntType();
+        }
+        if (isField(member, table)) {
+            return getField(member, table).getType();
+        }
 
+        // TODO: Might have to check imports
+        throw new RuntimeException("Unknown member access '" + member + "'");
+    }
     private static Type getBinExprType(JmmNode binaryExpr) {
         String operator = binaryExpr.get("op");
 
@@ -96,22 +122,23 @@ public class TypeUtils {
         };
     }
 
+    public static Type getIdType(String id, SymbolTable table, String currentMethod) {
+        if (isLocal(id, currentMethod, table)) {
+            return getLocal(id, currentMethod, table).getType();
+        }
 
-    private static Type getIdLiteralExprType(JmmNode idLiteralExpr, SymbolTable table, String currentMethod) {
+        if (isParam(id, currentMethod, table)) {
+            return getParam(id, currentMethod, table).getType();
+        }
+
+        if (isField(id, table)) {
+            return getField(id, table).getType();
+        }
+        throw new RuntimeException("Unknown variable '" + id + "'");
+    }
+    public static Type getIdLiteralExprType(JmmNode idLiteralExpr, SymbolTable table, String currentMethod) {
         var name = idLiteralExpr.get("id");
-
-        if (isLocal(name, currentMethod, table)) {
-            return getLocal(name, currentMethod, table).getType();
-        }
-
-        if (isParam(name, currentMethod, table)) {
-            return getParam(name, currentMethod, table).getType();
-        }
-
-        if (isField(name, table)) {
-            return getField(name, table).getType();
-        }
-        throw new RuntimeException("Unknown variable '" + name + "'");
+        return getIdType(name, table, currentMethod);
     }
 
 

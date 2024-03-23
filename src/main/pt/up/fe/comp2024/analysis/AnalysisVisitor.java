@@ -4,6 +4,8 @@ import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.ast.PreorderJmmVisitor;
 import pt.up.fe.comp.jmm.report.Report;
+import pt.up.fe.comp.jmm.report.Stage;
+import pt.up.fe.comp2024.ast.NodeUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +24,9 @@ public abstract class AnalysisVisitor extends PreorderJmmVisitor<SymbolTable, Vo
 
     protected void addReport(Report report) {
         reports.add(report);
+    }
+    protected void addReportNoException(JmmNode node, String message) {
+        addReport(Report.newError(Stage.SEMANTIC, NodeUtils.getLine(node), NodeUtils.getColumn(node), message, null));
     }
 
     protected List<Report> getReports() {
