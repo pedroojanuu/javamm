@@ -13,13 +13,19 @@ import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.comp2024.utils.ReportUtils;
 
 public class Methods extends AnalysisVisitor {
+    private String currentMethod;
     @Override
     protected void buildVisitor() {
         addVisit(Kind.OTHER_METHOD, this::visitNormalMethodDecl);
         addVisit(Kind.MAIN_METHOD, this::visitMainMethodDecl);
-        //addVisit(Kind.METHOD_CALL_EXPR, this::visitMethodCall);
+        addVisit(Kind.METHOD_CALL_EXPR, this::visitMethodCall);
+    }
+    private void setCurrentMethodName(JmmNode node) {
+        currentMethod = node.get("name");
     }
     private Void visitNormalMethodDecl(JmmNode method, SymbolTable table) {
+        setCurrentMethodName(method);
+
         var returnType = TypeUtils.getExprType(method.getObject("returnExpr", JmmNode.class), table, method.get("name"));
         var methodType = table.getReturnType(method.get("name"));
         if (!returnType.equals(methodType) &&
@@ -29,6 +35,8 @@ public class Methods extends AnalysisVisitor {
         return null;
     }
     private Void visitMainMethodDecl(JmmNode method, SymbolTable table) {
+        setCurrentMethodName(method);
+
         var paramType = method.get("paramType");
         String generalMessage = " A void method must always be static and be called main.";
         if (!paramType.equals("String")) {
@@ -41,5 +49,11 @@ public class Methods extends AnalysisVisitor {
         }
         return null;
     }
-    // private Void visitMethodCall(JmmNode method, SymbolTable table) {}
+    private Void visitMethodCall(JmmNode methodCall, SymbolTable table) {
+        if (!TypeUtils.isValidMethodCall(methodCall, table, currentMethod)) {
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, methodCall, "Unknown method call."));
+        }
+
+        return null;
+    }
 }
