@@ -31,6 +31,13 @@ public class TypeUtils {
         System.out.println("after here");
         return type;
     }
+    public static boolean typeInherits(Type subType, Type superType) {
+        if (subType.equals(superType)) {
+            return true;
+        }
+        var superName = subType.getOptionalObject("super").orElse(null);
+        return superType.getName().equals(superName);
+    }
     public static String getIntTypeName() {
         return INT_TYPE_NAME;
     }
@@ -87,19 +94,34 @@ public class TypeUtils {
         return switch (kind) {
             case BINARY_EXPR -> getBinExprType(expr);
             case ID_LITERAL_EXPR -> getIdLiteralExprType(expr, table, currentMethod);
-            case INT_LITERAL_EXPR -> getIntType();
+            case INT_LITERAL_EXPR, ARRAY_INDEX_EXPR -> getIntType();
             case MEMBER_ACCESS_EXPR -> getMemberAccessExprType(expr, table, currentMethod);
             case THIS_EXPR -> getMyClassType(table.getClassName(), table.getSuper());
             case NEW_OBJ_EXPR -> getNewObjExprType(expr, table);
-            case METHOD_CALL_EXPR -> getMethodCallExprType(expr, table);
+            case METHOD_CALL_EXPR -> getMethodCallExprType(expr, table, currentMethod);
             case NEW_ARRAY_EXPR -> getIntArrayType();
             default -> throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'");
         };
     }
-    public static Type getMethodCallExprType(JmmNode methodCallExpr, SymbolTable table) {
+    public static Type getMethodCallExprType(JmmNode methodCallExpr, SymbolTable table, String currentMethod) {
         var methodName = methodCallExpr.get("method");
         var object = methodCallExpr.getObject("object", JmmNode.class);
+        var objectType = getExprType(object, table, currentMethod);
 
+        // e.g.: this.method(params); a = this, a.method(params)
+        if (objectType.getName().equals(table.getClassName())) {
+            var method = table.getMethods().stream()
+                    .filter(m -> m.equals(methodName))
+                    .findFirst()
+                    .orElse(null);
+
+            if (method == null) {
+                throw new RuntimeException("Unknown method '" + methodName + "'");
+            }
+
+            return table.getReturnType(method);
+        }
+        /*
         if (object.getKind().equals(Kind.THIS_EXPR.getNodeName())) {    // this.method(params)
             var method = table.getMethods().stream()
                     .filter(m -> m.equals(methodName))
@@ -112,6 +134,7 @@ public class TypeUtils {
 
             return table.getReturnType(method);
         }
+         */
 
         // will probably have to deal with imports
         throw new RuntimeException("Unknown method '" + methodName + "'");

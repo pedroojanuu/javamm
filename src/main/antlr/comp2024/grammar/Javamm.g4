@@ -75,7 +75,7 @@ methodDecl locals[boolean isPublic=false, boolean isStatic=false]
     | (PUBLIC {$isPublic=true;})?
         STATIC {$isStatic=true;}
         methodType=VOID name=ID  // name="main"
-        LPAREN ID LSQUARE RSQUARE parameterName=ID RPAREN   // String[]
+        LPAREN paramType=ID LSQUARE RSQUARE parameterName=ID RPAREN   // String[]
         LCURLY varDecl* stmt* RCURLY #MainMethod
     ;
 

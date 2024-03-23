@@ -28,14 +28,8 @@ public class AssignType extends AnalysisVisitor {
         var leftType = TypeUtils.getIdType(id, table, currentMethod);
         var rightType = TypeUtils.getExprType(expr, table, currentMethod);
 
-        var rightSuperName = rightType.getOptionalObject("super").orElse(null);
-        System.out.println("start");
-        System.out.println("left type: " + leftType);
-        System.out.println("right type: " + rightType);
-        System.out.println("right super name:" + rightSuperName);
-        System.out.println("end");
         if (!leftType.equals(rightType) &&
-                !leftType.getName().equals(rightSuperName)) {
+                !TypeUtils.typeInherits(rightType, leftType)) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, assign, "Assignment with different types"));
         }
         return null;
