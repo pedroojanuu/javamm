@@ -247,7 +247,7 @@ public class TypeUtils {
      */
     public static boolean areTypesAssignable(Type sourceType, Type destinationType, SymbolTable table) {
         if (sourceType == null || destinationType == null ||
-                sourceType.getName().equals(destinationType.getName()) || typeInherits(sourceType, destinationType)) {
+                sourceType.equals(destinationType) || typeInherits(sourceType, destinationType)) {
             return true;
         }
 
