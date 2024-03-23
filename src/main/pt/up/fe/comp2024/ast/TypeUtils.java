@@ -14,6 +14,9 @@ public class TypeUtils {
     public static Type getIntType() {
         return new Type(INT_TYPE_NAME, false);
     }
+    public static Type getIntArrayType() {
+        return new Type(INT_TYPE_NAME, true);
+    }
     public static Type getBooleanType() {
         return new Type(BOOLEAN_TYPE_NAME, false);
     }
@@ -89,6 +92,7 @@ public class TypeUtils {
             case THIS_EXPR -> getMyClassType(table.getClassName(), table.getSuper());
             case NEW_OBJ_EXPR -> getNewObjExprType(expr, table);
             case METHOD_CALL_EXPR -> getMethodCallExprType(expr, table);
+            case NEW_ARRAY_EXPR -> getIntArrayType();
             default -> throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'");
         };
     }

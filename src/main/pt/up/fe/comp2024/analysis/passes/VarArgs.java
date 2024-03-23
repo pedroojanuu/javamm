@@ -17,6 +17,7 @@ public class VarArgs extends AnalysisVisitor {
     @Override
     protected void buildVisitor() {
         addVisit(Kind.METHOD_DECL, this::visitMethodDecl);
+        addVisit(Kind.VAR_DECL, this::visitVarDecl);
     }
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         // currentMethod = method.get("name");
@@ -34,5 +35,11 @@ public class VarArgs extends AnalysisVisitor {
         }
         return null;
     }
-
+    private Void visitVarDecl(JmmNode varDecl, SymbolTable table) {
+        var type = varDecl.getObject("varType", JmmNode.class);
+        if (type.getKind().equals(Kind.VAR_ARGS.getNodeName())) {
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, varDecl,"VarArgs cannot be used in a variable declaration"));
+        }
+        return null;
+    }
 }
