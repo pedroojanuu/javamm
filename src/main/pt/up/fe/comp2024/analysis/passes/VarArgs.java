@@ -20,14 +20,14 @@ public class VarArgs extends AnalysisVisitor {
         addVisit(Kind.VAR_DECL, this::visitVarDecl);
     }
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
-        // currentMethod = method.get("name");
-        var params = method.getChildren(Kind.PARAM);
+        var paramNodes = method.getChildren(Kind.PARAM);
+        var paramSymbols = table.getParameters(method.get("name"));
 
-        for (int i = 0; i < params.size() - 1; i++) {
-            var param = params.get(i);
-            var kind = param.getKind();
-            if (kind.equals(Kind.VAR_ARGS.getNodeName())) {
-                addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, param,"VarArgs parameter must always be the last parameter"));
+        for (int i = 0; i < paramNodes.size() - 1; i++) {
+            var paramSymbol = paramSymbols.get(i);
+            if (paramSymbol.getType().hasAttribute("varArgs")) {
+                var paramNode = paramNodes.get(i);
+                addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, paramNode,"VarArgs parameter must always be the last parameter"));
             }
         }
         if (table.getReturnType(method.get("name")).hasAttribute("varArgs")) {

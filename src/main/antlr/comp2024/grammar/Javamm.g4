@@ -113,13 +113,13 @@ expr
     | left=expr op=LT right=expr #BinaryExpr
     | left=expr op=AND right=expr #BinaryExpr
     | value=INTEGER #IntLiteralExpr
-    | TRUE #TrueLiteralExpr
-    | FALSE #FalseLiteralExpr
+    | value=TRUE #BooleanLiteralExpr
+    | value=FALSE #BooleanLiteralExpr
     | id=ID #IdLiteralExpr
     | THIS #ThisExpr
     | LSQUARE (elems+=expr (',' elems+=expr)*)? RSQUARE #ArrayDeclExpr
     ;
 
 arglist
-    : args+=expr(',' args+=expr)*
+    : expr (','  expr)*
     ;

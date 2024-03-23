@@ -97,11 +97,22 @@ public class TypeUtils {
             case NEW_OBJ_EXPR -> getNewObjExprType(expr, table);
             case METHOD_CALL_EXPR -> getMethodCallExprType(expr, table, currentMethod);
             case NEW_ARRAY_EXPR -> getIntArrayType();
+            case BOOLEAN_LITERAL_EXPR -> getBooleanType();
             default -> throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'");
         };
     }
 
-    public static boolean isValidMethodCall(JmmNode methodCallExpr, SymbolTable table, String currentMethod) {
+    /**
+     *
+     * @param methodCallExpr
+     * @param table
+     * @param currentMethod
+     * @return Message for the error report if the method call is invalid, null otherwise
+     */
+    public static String isValidMethodCall(JmmNode methodCallExpr, SymbolTable table, String currentMethod) {
+        var defaultErrorMessage = "Unknown method call.";
+        var invalidArgumentsMessage = "Invalid arguments for method call.";
+
         var object = methodCallExpr.getObject("object", JmmNode.class);
         var methodName = methodCallExpr.get("method");
         var objectType = getExprType(object, table, currentMethod);
@@ -112,14 +123,40 @@ public class TypeUtils {
                     .anyMatch(m -> m.equals(methodName));
             if (!methodExists) {
                 var superName = objectType.getOptionalObject("super").orElse("");
-                return !superName.equals("");
+                if (superName.equals("")) {
+                    return defaultErrorMessage;
+                }
+                return null;
             }
-            return true;
+            var argList = methodCallExpr.getChild(methodCallExpr.getNumChildren() - 1);
+            var paramsST = table.getParameters(methodName);
+            int varArgsIdx = 0;
+            for (int i = 0; i < paramsST.size(); i++) {
+                var paramType = paramsST.get(i).getType();
+                var argType = getExprType(argList.getChild(i), table, currentMethod);
+                if (paramType.hasAttribute("varArgs")) {
+                    varArgsIdx = i;
+                    break;
+                }
+                if (!areTypesAssignable(argType, paramType)) {
+                    return invalidArgumentsMessage;
+                }
+            }
+            for (int i = varArgsIdx; i < argList.getNumChildren(); i++) {
+                var argType = getExprType(argList.getChild(i), table, currentMethod);
+                if (!areTypesAssignable(argType, getIntType())) {   // just compare to int
+                    return invalidArgumentsMessage;
+                }
+            }
+            return null;
         }
 
         // assume that methods from imports are valid
-        return table.getImports().stream()
-                .anyMatch(imp -> imp.equals(objectType.getName()));
+        if (table.getImports().stream()
+                .anyMatch(imp -> imp.equals(objectType.getName()))) {
+            return null;
+        }
+        return defaultErrorMessage;
     }
     public static Type getMethodCallExprType(JmmNode methodCallExpr, SymbolTable table, String currentMethod) {
         var methodName = methodCallExpr.get("method");
@@ -199,7 +236,7 @@ public class TypeUtils {
      * @return true if sourceType can be assigned to destinationType
      */
     public static boolean areTypesAssignable(Type sourceType, Type destinationType) {
-        // TODO: Simple implementation that needs to be expanded
-        return sourceType.getName().equals(destinationType.getName());
+        // TODO: or they both come from imports
+        return sourceType.getName().equals(destinationType.getName()) || typeInherits(sourceType, destinationType);
     }
 }

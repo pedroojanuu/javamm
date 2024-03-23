@@ -28,8 +28,7 @@ public class AssignType extends AnalysisVisitor {
         var leftType = TypeUtils.getIdType(id, table, currentMethod);
         var rightType = TypeUtils.getExprType(expr, table, currentMethod);
 
-        if (!leftType.equals(rightType) &&
-                !TypeUtils.typeInherits(rightType, leftType)) {
+        if (!TypeUtils.areTypesAssignable(rightType, leftType)) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, assign, "Assignment with different types"));
         }
         return null;

@@ -28,8 +28,8 @@ public class Methods extends AnalysisVisitor {
 
         var returnType = TypeUtils.getExprType(method.getObject("returnExpr", JmmNode.class), table, method.get("name"));
         var methodType = table.getReturnType(method.get("name"));
-        if (!returnType.equals(methodType) &&
-                !TypeUtils.typeInherits(returnType, methodType)) {
+
+        if (!TypeUtils.areTypesAssignable(returnType, methodType)) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, method, "Method return type does not match the declared type"));
         }
         return null;
@@ -50,8 +50,9 @@ public class Methods extends AnalysisVisitor {
         return null;
     }
     private Void visitMethodCall(JmmNode methodCall, SymbolTable table) {
-        if (!TypeUtils.isValidMethodCall(methodCall, table, currentMethod)) {
-            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, methodCall, "Unknown method call."));
+        String message = TypeUtils.isValidMethodCall(methodCall, table, currentMethod);
+        if (message != null) {
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, methodCall, message));
         }
 
         return null;
