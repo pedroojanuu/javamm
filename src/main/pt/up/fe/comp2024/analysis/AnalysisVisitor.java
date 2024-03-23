@@ -25,9 +25,6 @@ public abstract class AnalysisVisitor extends PreorderJmmVisitor<SymbolTable, Vo
     protected void addReport(Report report) {
         reports.add(report);
     }
-    protected void addReportNoException(JmmNode node, String message) {
-        addReport(Report.newError(Stage.SEMANTIC, NodeUtils.getLine(node), NodeUtils.getColumn(node), message, null));
-    }
 
     protected List<Report> getReports() {
         return reports;

@@ -7,6 +7,7 @@ import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2024.analysis.AnalysisVisitor;
 import pt.up.fe.comp2024.ast.Kind;
 import pt.up.fe.comp2024.ast.NodeUtils;
+import pt.up.fe.comp2024.utils.ReportUtils;
 import pt.up.fe.specs.util.SpecsCheck;
 
 /**
@@ -55,13 +56,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
 
         // Create error report
         var message = String.format("Variable '%s' does not exist.", varRefName);
-        addReport(Report.newError(
-                Stage.SEMANTIC,
-                NodeUtils.getLine(varRefExpr),
-                NodeUtils.getColumn(varRefExpr),
-                message,
-                null)
-        );
+        addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, varRefExpr, message));
 
         return null;
     }

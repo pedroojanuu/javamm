@@ -9,6 +9,7 @@ import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2024.ast.Kind;
 import pt.up.fe.comp2024.ast.NodeUtils;
 import pt.up.fe.comp2024.ast.TypeUtils;
+import pt.up.fe.comp2024.utils.ReportUtils;
 
 public class BoolExpr extends AnalysisVisitor {
     private String currentMethod;
@@ -28,7 +29,7 @@ public class BoolExpr extends AnalysisVisitor {
         var conditionType = TypeUtils.getExprType(condition, table, currentMethod);
 
         if (!conditionType.equals(TypeUtils.getBooleanType())) {
-            addReport(Report.newError(Stage.SEMANTIC, NodeUtils.getLine(condition), NodeUtils.getColumn(condition), "Condition must be of type boolean", null));
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, condition, "Condition must be of type boolean"));
         }
         return null;
     }

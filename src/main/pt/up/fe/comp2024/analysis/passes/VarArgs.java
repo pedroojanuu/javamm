@@ -29,7 +29,10 @@ public class VarArgs extends AnalysisVisitor {
                 addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, param,"VarArgs parameter must always be the last parameter"));
             }
         }
-
+        if (table.getReturnType(method.get("name")).hasAttribute("varArgs")) {
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, method,"Method return type cannot be VarArgs"));
+        }
         return null;
     }
+
 }

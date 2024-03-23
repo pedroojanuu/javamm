@@ -33,6 +33,7 @@ public enum Kind {
     MEMBER_ACCESS_EXPR,
     NEW_OBJ_EXPR,
     NEW_ARRAY_EXPR,
+    METHOD_CALL_EXPR,
     ;
 
     private static final Set<Kind> STATEMENTS = Set.of(ASSIGN_STMT, RETURN_STMT);

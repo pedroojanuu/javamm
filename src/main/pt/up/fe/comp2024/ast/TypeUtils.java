@@ -87,11 +87,32 @@ public class TypeUtils {
             case INT_LITERAL_EXPR -> getIntType();
             case MEMBER_ACCESS_EXPR -> getMemberAccessExprType(expr, table, currentMethod);
             case THIS_EXPR -> getMyClassType(table.getClassName(), table.getSuper());
-            case NEW_OBJ_EXPR -> getNewObjExprType(expr, table, currentMethod);
+            case NEW_OBJ_EXPR -> getNewObjExprType(expr, table);
+            case METHOD_CALL_EXPR -> getMethodCallExprType(expr, table);
             default -> throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'");
         };
     }
-    public static Type getNewObjExprType(JmmNode newObjExpr, SymbolTable table, String currentMethod) {
+    public static Type getMethodCallExprType(JmmNode methodCallExpr, SymbolTable table) {
+        var methodName = methodCallExpr.get("method");
+        var object = methodCallExpr.getObject("object", JmmNode.class);
+
+        if (object.getKind().equals(Kind.THIS_EXPR.getNodeName())) {    // this.method(params)
+            var method = table.getMethods().stream()
+                    .filter(m -> m.equals(methodName))
+                    .findFirst()
+                    .orElse(null);
+
+            if (method == null) {
+                throw new RuntimeException("Unknown method '" + methodName + "'");
+            }
+
+            return table.getReturnType(method);
+        }
+
+        // will probably have to deal with imports
+        throw new RuntimeException("Unknown method '" + methodName + "'");
+    }
+    public static Type getNewObjExprType(JmmNode newObjExpr, SymbolTable table) {
         var className = newObjExpr.get("id");
         if (table.getClassName().equals(className)) {
             return getMyClassType(className, table.getSuper());

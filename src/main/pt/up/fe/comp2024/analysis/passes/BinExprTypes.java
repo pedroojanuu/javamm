@@ -9,6 +9,7 @@ import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2024.ast.Kind;
 import pt.up.fe.comp2024.ast.NodeUtils;
 import pt.up.fe.comp2024.ast.TypeUtils;
+import pt.up.fe.comp2024.utils.ReportUtils;
 
 
 public class BinExprTypes extends AnalysisVisitor  {
@@ -22,17 +23,14 @@ public class BinExprTypes extends AnalysisVisitor  {
         currentMethod = method.get("name");
         return null;
     }
-    private void addReportAux(JmmNode node, String message) {
-        addReport(Report.newError(Stage.SEMANTIC, NodeUtils.getLine(node), NodeUtils.getColumn(node), message, null));
-    }
     private void checkArithmetic(JmmNode left, JmmNode right, Type leftType, Type rightType, SymbolTable table) {
         if (!leftType.equals(TypeUtils.getIntType()) || !rightType.equals(TypeUtils.getIntType())) {
-            addReportAux(left, "Arithmetic operation with non-integer types");
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, left, "Arithmetic operation with non-integer types"));
         }
     }
     private void checkComparison(JmmNode left, JmmNode right, Type leftType, Type rightType, SymbolTable table) {
         if (!leftType.equals(TypeUtils.getIntType()) || !rightType.equals(TypeUtils.getIntType())) {
-            addReportAux(left, "Comparison operation with non-integer types");
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, left, "Comparison operation with non-integer types"));
         }
     }
     private Void visitBinaryExpr(JmmNode binaryExpr, SymbolTable table) {
@@ -44,7 +42,7 @@ public class BinExprTypes extends AnalysisVisitor  {
         var rightType = TypeUtils.getExprType(right, table, currentMethod);
 
         if (!leftType.equals(rightType)) {
-            addReportAux(binaryExpr, "Binary expression with different types");
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, binaryExpr, "Binary expression with different types"));
         }
         else {
             if (op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/")) {

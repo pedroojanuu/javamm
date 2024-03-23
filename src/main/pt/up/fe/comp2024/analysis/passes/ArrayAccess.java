@@ -10,6 +10,7 @@ import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2024.ast.Kind;
 import pt.up.fe.comp2024.ast.NodeUtils;
 import pt.up.fe.comp2024.ast.TypeUtils;
+import pt.up.fe.comp2024.utils.ReportUtils;
 
 public class ArrayAccess extends AnalysisVisitor {
     private String currentMethod;
@@ -30,20 +31,20 @@ public class ArrayAccess extends AnalysisVisitor {
         var arrayType = TypeUtils.getExprType(array, table, currentMethod);
         var indexType = TypeUtils.getExprType(index, table, currentMethod);
         if (!arrayType.isArray()) {
-            addReportNoException(array, "Array access on non-array type");
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, array, "Array access on non-array type"));
         }
         if (!indexType.equals(TypeUtils.getIntType())) {
-            addReportNoException(index, "Array index must be of type int");
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, index, "Array index must be of type int"));
         }
         return null;
     }
     private Void visitMemberAccess(JmmNode method, SymbolTable table) {
-        var leftExpr = method.getObject("left", JmmNode.class);
+        var leftExpr = method.getObject("object", JmmNode.class);
         String member = method.get("member");
         var leftExprType = TypeUtils.getExprType(leftExpr, table, currentMethod);
 
         if (member.equals("length") && !leftExprType.isArray()) {
-            addReportNoException(leftExpr, "Access length on non-array type");
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, leftExpr, "Access length on non-array type"));
         }
         return null;
     }

@@ -8,6 +8,7 @@ import pt.up.fe.comp2024.analysis.AnalysisVisitor;
 import pt.up.fe.comp2024.ast.NodeUtils;
 import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.comp2024.ast.Kind;
+import pt.up.fe.comp2024.utils.ReportUtils;
 
 public class AssignType extends AnalysisVisitor {
     private String currentMethod;
@@ -35,7 +36,7 @@ public class AssignType extends AnalysisVisitor {
         System.out.println("end");
         if (!leftType.equals(rightType) &&
                 !leftType.getName().equals(rightSuperName)) {
-            addReportNoException(assign, "Assignment with different types");
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, assign, "Assignment with different types"));
         }
         return null;
     }

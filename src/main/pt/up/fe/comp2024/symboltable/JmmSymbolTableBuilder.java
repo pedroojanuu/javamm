@@ -65,8 +65,13 @@ public class JmmSymbolTableBuilder {
     private static Type getType(JmmNode node, String className, String superName) {
         Type type;
         switch (Kind.fromString(node.getKind())) {
-            case INT_ARRAY, VAR_ARGS -> {
+            case INT_ARRAY -> {
                 return new Type(TypeUtils.getIntTypeName(), true);
+            }
+            case VAR_ARGS -> {
+                type = new Type(TypeUtils.getIntTypeName(), true);
+                type.putObject("varArgs", true);
+                return type;
             }
             case BOOLEAN -> {
                 return new Type(TypeUtils.getBooleanTypeName(), false);

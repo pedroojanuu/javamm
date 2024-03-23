@@ -104,7 +104,7 @@ expr
     : LPAREN expr RPAREN #ParenExpr
     | name=expr LSQUARE index=expr RSQUARE #ArrayIndexExpr
     | object=expr '.' method=ID LPAREN arglist? RPAREN #MethodCallExpr
-    | left=expr '.' member=ID #MemberAccessExpr  // Member access (e.g. this.variable, array.length)
+    | object=expr '.' member=ID #MemberAccessExpr  // Member access (e.g. this.variable, array.length)
     | EXCL expr #NotExpr
     | NEW INT LSQUARE size=expr RSQUARE #NewArrayExpr
     | NEW id=ID LPAREN RPAREN #NewObjExpr

@@ -9,6 +9,7 @@ import pt.up.fe.comp2024.analysis.AnalysisVisitor;
 import pt.up.fe.comp2024.ast.NodeUtils;
 import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.comp2024.ast.Kind;
+import pt.up.fe.comp2024.utils.ReportUtils;
 
 public class ThisExpr extends AnalysisVisitor {
     private JmmNode currentMethod;
@@ -23,7 +24,7 @@ public class ThisExpr extends AnalysisVisitor {
     }
     private Void visitThisExpr(JmmNode thisExpr, SymbolTable table) {
         if (currentMethod.get("isStatic").equals("true")) {
-            addReportNoException(thisExpr, "This expression in static method");
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, thisExpr, "This expression in static method"));
         }
         return null;
     }
