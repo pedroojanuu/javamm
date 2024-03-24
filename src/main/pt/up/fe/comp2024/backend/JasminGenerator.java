@@ -29,6 +29,7 @@ public class JasminGenerator {
     String code;
 
     Method currentMethod;
+    ClassUnit currentClass;
 
     private final FunctionClassMap<TreeNode, String> generators;
 
@@ -40,6 +41,7 @@ public class JasminGenerator {
         currentMethod = null;
 
         this.generators = new FunctionClassMap<>();
+        // Falta criar Field
         generators.put(ClassUnit.class, this::generateClassUnit);
         generators.put(Method.class, this::generateMethod);
         generators.put(AssignInstruction.class, this::generateAssign);
@@ -48,6 +50,8 @@ public class JasminGenerator {
         generators.put(Operand.class, this::generateOperand);
         generators.put(BinaryOpInstruction.class, this::generateBinaryOp);
         generators.put(ReturnInstruction.class, this::generateReturn);
+        generators.put(CallInstruction.class, this::generateCall);
+        generators.put(PutFieldInstruction.class, this::generatePutField);
     }
 
     public List<Report> getReports() {
@@ -67,6 +71,7 @@ public class JasminGenerator {
 
     private String generateClassUnit(ClassUnit classUnit) {
 
+        currentClass = classUnit;
         var code = new StringBuilder();
 
         // generate class name
@@ -87,7 +92,7 @@ public class JasminGenerator {
                 """;
         code.append(defaultConstructor);
 
-        // generate code for all other methods
+        // generate code for all other methodst/up/fe/comp/cp2/jasmin/
         for (var method : ollirResult.getOllirClass().getMethods()) {
 
             // Ignore constructor, since there is always one constructor
@@ -99,6 +104,8 @@ public class JasminGenerator {
 
             code.append(generators.apply(method));
         }
+
+        currentClass = null;
 
         return code.toString();
     }
@@ -141,6 +148,7 @@ public class JasminGenerator {
     }
 
     private String generateAssign(AssignInstruction assign) {
+        // Falta Boolean Assign
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
@@ -186,6 +194,7 @@ public class JasminGenerator {
         code.append(generators.apply(binaryOp.getRightOperand()));
 
         // apply operation
+        // Falta Muitos Operadores
         var op = switch (binaryOp.getOperation().getOpType()) {
             case ADD -> "iadd";
             case MUL -> "imul";
@@ -201,11 +210,44 @@ public class JasminGenerator {
         var code = new StringBuilder();
 
         // TODO: Hardcoded to int return type, needs to be expanded
-
-        code.append(generators.apply(returnInst.getOperand()));
-        code.append("ireturn").append(NL);
+        if(returnInst.getOperand() == null)
+            code.append("return").append(NL);
+        else {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("ireturn").append(NL);
+        }
 
         return code.toString();
     }
 
+    private String generateCall(CallInstruction call) {
+        var code = new StringBuilder();
+
+        // generate code for loading arguments
+        for (var arg : call.getArguments()) {
+            code.append(generators.apply(arg));
+        }
+
+        // generate code for calling method
+        code.append("invokestatic ").append(currentClass.getClassName()).append("/").append(call.getMethodName()).append("(I)I").append(NL);
+
+        return code.toString();
+    }
+
+    private String generatePutField(PutFieldInstruction putField) {
+        var code = new StringBuilder();
+
+        // generate code for loading what's on the right
+        code.append(generators.apply(putField.getObject()));
+
+        // store value in the stack in destination
+        var field = putField.getField();
+
+        // get register
+        var reg = currentMethod.getVarTable().get(field).getVirtualReg();
+
+        code.append("putfield ").append(currentClass.getClassName()).append("/").append(field).append(" I").append(NL);
+
+        return code.toString();
+    }
 }
