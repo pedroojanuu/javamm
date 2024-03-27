@@ -34,7 +34,7 @@ public class Launcher {
         TestUtils.noErrors(parserResult.getReports());
 
         // Print AST
-        // System.out.println(parserResult.getRootNode().toTree());
+        System.out.println(parserResult.getRootNode().toTree());
 
         // Semantic Analysis stage
         JmmAnalysisImpl sema = new JmmAnalysisImpl();
@@ -45,6 +45,7 @@ public class Launcher {
         var symbolTable = semanticsResult.getSymbolTable();
         System.out.println(symbolTable);
 
+        /*
         // Optimization stage
         JmmOptimizationImpl ollirGen = new JmmOptimizationImpl();
         OllirResult ollirResult = ollirGen.toOllir(semanticsResult);
@@ -52,6 +53,7 @@ public class Launcher {
 
         // Print OLLIR code
         System.out.println(ollirResult.getOllirCode());
+        */
 
         // Code generation stage
         //JasminBackendImpl jasminGen = new JasminBackendImpl();

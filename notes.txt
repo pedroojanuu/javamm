@@ -1,0 +1,87 @@
+JmmSymbolTable{
+    className='SymbolTable',
+    superName='Quicksort',
+    imports=[
+        io, Quicksort
+    ],
+    methods=[
+        main, method1, method2
+    ],
+    fields=[
+        Symbol [
+            type=Type [
+                name=int, isArray=false
+            ],
+            name=intField
+        ],
+        Symbol [
+            type=Type [
+                name=boolean,
+                isArray=false
+            ],
+            name=boolField
+        ]
+    ],
+    returnTypes={
+        method1=Type [
+            name=int,
+            isArray=false
+        ],
+        method2=Type [
+            name=boolean,
+            isArray=false
+        ],
+        main=Type [
+            name=void,
+            isArray=false
+        ]
+    },
+    params={
+        method1=[],
+        method2=[
+            Symbol [
+                type=Type [
+                    name=int,
+                    isArray=false
+                ],
+                name=intParam1
+            ],
+            Symbol [
+                type=Type [
+                    name=boolean,
+                    isArray=false
+                ],
+                name=boolParam1
+            ]
+        ],
+        main=[
+            Symbol [
+                type=Type [
+                    name=String,
+                    isArray=true
+                ],
+                name=args
+            ]
+        ]
+    },
+    locals={
+        method1=[
+            Symbol [
+                type=Type [
+                    name=int,
+                    isArray=false
+                ],
+                name=intLocal1
+            ],
+            Symbol [
+                type=Type [
+                    name=boolean,
+                    isArray=false
+                ],
+                name=boolLocal1
+            ]
+        ],
+        method2=[],
+        main=[]
+    }
+}
