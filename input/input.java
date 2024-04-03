@@ -1,7 +1,7 @@
 import io;
 import Quicksort;
 
-class SymbolTable extends Quicksort {
+class CompileBasic extends Quicksort {
 
     int intField;
     boolean boolField;
@@ -17,7 +17,7 @@ class SymbolTable extends Quicksort {
         return boolParam1;
     }
 
+
     public static void main(String[] args) {
     }
-
 }

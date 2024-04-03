@@ -182,6 +182,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         // type
         var retType = OptUtils.toOllirType(node.getJmmChild(0));
         code.append(retType);
+
         code.append(L_BRACKET);
 
 
