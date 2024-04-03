@@ -70,8 +70,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(NEW_OBJ_EXPR, this::visitNewObjExpr);
         addVisit(BINARY_EXPR, this::visitBinaryExpr);
         addVisit(INT_LITERAL_EXPR, this::visitIntLiteralExpr);
-        addVisit(TRUE_LITERAL_EXPR, this::visitBoolLiteralExpr);
-        addVisit(FALSE_LITERAL_EXPR, this::visitBoolLiteralExpr);
+        addVisit(BOOLEAN_LITERAL_EXPR, this::visitBoolLiteralExpr);
         addVisit(ID_LITERAL_EXPR, this::visitIdLiteralExpr);
         addVisit(THIS_EXPR, this::visitThisExpr);
         //addVisit(ARRAY_DECL_EXPR, this::visitArrayDeclExpr);
