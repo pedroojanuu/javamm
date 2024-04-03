@@ -7,12 +7,13 @@ import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2024.analysis.AnalysisVisitor;
 import pt.up.fe.comp2024.ast.Kind;
 import pt.up.fe.comp2024.ast.NodeUtils;
+import pt.up.fe.comp2024.symboltable.SymbolTableUtils;
+import pt.up.fe.comp2024.utils.ReportUtils;
 import pt.up.fe.specs.util.SpecsCheck;
 
 /**
  * Checks if the type of the expression in a return statement is compatible with the method return type.
  *
- * @author JBispo
  */
 public class UndeclaredVariable extends AnalysisVisitor {
 
@@ -21,8 +22,9 @@ public class UndeclaredVariable extends AnalysisVisitor {
     @Override
     public void buildVisitor() {
         addVisit(Kind.METHOD_DECL, this::visitMethodDecl);
-        addVisit(Kind.VAR_REF_EXPR, this::visitVarRefExpr);
+        addVisit(Kind.ID_LITERAL_EXPR, this::visitVarRefExpr);
     }
+
 
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
@@ -33,7 +35,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
         SpecsCheck.checkNotNull(currentMethod, () -> "Expected current method to be set");
 
         // Check if exists a parameter or variable declaration with the same name as the variable reference
-        var varRefName = varRefExpr.get("name");
+        var varRefName = varRefExpr.get("id");
 
         // Var is a field, return
         if (table.getFields().stream()
@@ -53,15 +55,12 @@ public class UndeclaredVariable extends AnalysisVisitor {
             return null;
         }
 
+        if (SymbolTableUtils.hasImport(table, varRefName)) {
+            return null;
+        }
         // Create error report
         var message = String.format("Variable '%s' does not exist.", varRefName);
-        addReport(Report.newError(
-                Stage.SEMANTIC,
-                NodeUtils.getLine(varRefExpr),
-                NodeUtils.getColumn(varRefExpr),
-                message,
-                null)
-        );
+        addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, varRefExpr, message));
 
         return null;
     }

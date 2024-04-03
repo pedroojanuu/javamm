@@ -36,17 +36,18 @@ public enum Kind {
     NEW_OBJ_EXPR,
     BINARY_EXPR,
     INT_LITERAL_EXPR,
-    TRUE_LITERAL_EXPR,
-    FALSE_LITERAL_EXPR,
     ID_LITERAL_EXPR,
     THIS_EXPR,
     ARRAY_DECL_EXPR,
     INTEGER_LITERAL,
-    VAR_REF_EXPR;
-
+    VAR_REF_EXPR,
+    ARRAY_INDEX_EXPR,
+    MEMBER_ACCESS_EXPR,
+    BOOLEAN_LITERAL_EXPR
+    ;
 
     private static final Set<Kind> STATEMENTS = Set.of(ASSIGN_STMT, RETURN_STMT);
-    private static final Set<Kind> EXPRESSIONS = Set.of(BINARY_EXPR, INTEGER_LITERAL, VAR_REF_EXPR);
+    private static final Set<Kind> EXPRESSIONS = Set.of(BINARY_EXPR, INT_LITERAL_EXPR, ID_LITERAL_EXPR);
 
     private final String name;
 
