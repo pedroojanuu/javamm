@@ -46,7 +46,6 @@ public class Launcher {
         var symbolTable = semanticsResult.getSymbolTable();
         System.out.println(symbolTable);
 
-        /*
         // Optimization stage
         JmmOptimizationImpl ollirGen = new JmmOptimizationImpl();
         OllirResult ollirResult = ollirGen.toOllir(semanticsResult);
@@ -54,7 +53,6 @@ public class Launcher {
 
         // Print OLLIR code
         System.out.println(ollirResult.getOllirCode());
-        */
 
         // Code generation stage
         //JasminBackendImpl jasminGen = new JasminBackendImpl();
