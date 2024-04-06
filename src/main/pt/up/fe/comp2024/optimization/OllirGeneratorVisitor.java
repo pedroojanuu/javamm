@@ -21,8 +21,8 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private final String NL = "\n";
     private final String L_BRACKET = " {\n";
     private final String R_BRACKET = "}\n";
-    private final String IMPORT = "import";
-    private final String FIELD = ".field";
+    private final String IMPORT = "import ";
+    private final String FIELD = ".field ";
     private final String BOOL = ".bool";
     private final String INTEGER = ".i32";
 
@@ -93,7 +93,12 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         StringBuilder code = new StringBuilder();
 
         code.append(IMPORT);
-        code.append(node.get("id"));
+
+        var id = node.get("id");
+        var contents = id.substring(1, id.length() - 1).split(", ");
+        String result = String.join(".", contents);
+        code.append(result);
+
         code.append(END_STMT);
 
         return code.toString();
@@ -103,7 +108,12 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         StringBuilder code = new StringBuilder();
 
+        code.append(NL);
+
         code.append(table.getClassName());
+        if (node.hasAttribute("extended_name"))
+            code.append(" extends " + node.get("extended_name"));
+
         code.append(L_BRACKET);
 
         code.append(NL);
@@ -175,11 +185,21 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(name);
 
         // param
-        var paramCode = visit(node.getJmmChild(1));
-        code.append("(" + paramCode + ")");
+        code.append("(");
+        var params = node.getChildren(PARAM);
+        if (params.size() > 0) {
+            for (int i = 0; i < params.size() - 1; i++) {
+                var param = params.get(i);
+                var paramCode = visit(param);
+                code.append(paramCode + ", ");
+            }
+            var lastParam = params.getLast();
+            code.append(visit(lastParam));
+        }
+        code.append(")");
 
         // type
-        var retType = OptUtils.toOllirType(node.getJmmChild(0));
+        var retType = OptUtils.toOllirType(table.getReturnType(node.get("name")));
         code.append(retType);
 
         code.append(L_BRACKET);
@@ -225,7 +245,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
     private String visitParam(JmmNode node, Void unused) {
 
-        var typeCode = OptUtils.toOllirType(node.getJmmChild(0));
+        var typeCode = OptUtils.toOllirType(node.getChild(0));
         var id = node.get("name");
 
         String code = id + typeCode;
