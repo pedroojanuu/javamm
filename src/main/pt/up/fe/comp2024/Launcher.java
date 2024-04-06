@@ -34,12 +34,13 @@ public class Launcher {
         TestUtils.noErrors(parserResult.getReports());
 
         // Print AST
-        // System.out.println(parserResult.getRootNode().toTree());
+        System.out.println(parserResult.getRootNode().toTree());
 
 
         // Semantic Analysis stage
         JmmAnalysisImpl sema = new JmmAnalysisImpl();
         JmmSemanticsResult semanticsResult = sema.semanticAnalysis(parserResult);
+        System.out.println(semanticsResult.getReports());
         TestUtils.noErrors(semanticsResult.getReports());
 
         // print the contents of the symbol table (e.g. imports, ...)

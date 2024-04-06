@@ -67,14 +67,15 @@ varDecl
     : varType=type name=ID SEMI
     ;
 
-methodDecl locals[boolean isPublic=false]
+methodDecl locals[boolean isPublic=false, boolean isStatic=false]
     : (PUBLIC {$isPublic=true;})?
         methodType=type name=ID
         LPAREN (param (',' param)*)? RPAREN
         LCURLY varDecl* stmt* RETURN returnExpr=expr SEMI RCURLY #OtherMethod
     | (PUBLIC {$isPublic=true;})?
-        STATIC methodType=VOID name=ID  // name="main"
-        LPAREN ID LSQUARE RSQUARE parameterName=ID RPAREN   // String[]
+        STATIC {$isStatic=true;}
+        methodType=VOID name=ID  // name="main"
+        LPAREN paramType=ID LSQUARE RSQUARE parameterName=ID RPAREN   // String[]
         LCURLY varDecl* stmt* RCURLY #MainMethod
     ;
 
@@ -95,15 +96,15 @@ stmt
     | IF LPAREN condition=expr RPAREN ifBody=stmt ELSE elseBody=stmt #IfStmt
     | WHILE LPAREN condition=expr RPAREN body=stmt #WhileStmt
     | expr SEMI #ExprStmt
-    | ID EQUALS value=expr SEMI #AssignStmt
-    | ID LSQUARE index=expr RSQUARE EQUALS value=expr SEMI #ArrayAssignStmt
+    | id=ID EQUALS value=expr SEMI #AssignStmt
+    | id=ID LSQUARE index=expr RSQUARE EQUALS value=expr SEMI #ArrayAssignStmt
     ;
 
 expr
     : LPAREN expr RPAREN #ParenExpr
     | name=expr LSQUARE index=expr RSQUARE #ArrayIndexExpr
     | object=expr '.' method=ID LPAREN arglist? RPAREN #MethodCallExpr
-    | expr '.' ID #LenExpr  // array.length
+    | object=expr '.' member=ID #MemberAccessExpr  // Member access (e.g. this.variable, array.length)
     | EXCL expr #NotExpr
     | NEW INT LSQUARE size=expr RSQUARE #NewArrayExpr
     | NEW id=ID LPAREN RPAREN #NewObjExpr
@@ -112,13 +113,13 @@ expr
     | left=expr op=LT right=expr #BinaryExpr
     | left=expr op=AND right=expr #BinaryExpr
     | value=INTEGER #IntLiteralExpr
-    | TRUE #TrueLiteralExpr
-    | FALSE #FalseLiteralExpr
-    | id=ID #IDLiteralExpr
+    | value=TRUE #BooleanLiteralExpr
+    | value=FALSE #BooleanLiteralExpr
+    | id=ID #IdLiteralExpr
     | THIS #ThisExpr
-    | LSQUARE (elems+=expr (',' elems+=expr)*)? RSQUARE #ArrayDeclExpr
+    | LSQUARE (expr (',' expr)* )? RSQUARE #ArrayDeclExpr
     ;
 
 arglist
-    : args+=expr(',' args+=expr)*
+    : expr (','  expr)*
     ;
