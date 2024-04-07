@@ -13,6 +13,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 //Notas falta - chamar metodos doutras classes, extends, constructors, True and false, operators, objRef&Arrays
+//Duvidas o que operationSHRR seginifica
+//Erro no super class
+//Diferenca entre ANDB e AND
+//Temos que implementar short-circuiting
 
 /**
  * Generates Jasmin code from an OllirResult.
@@ -50,6 +54,7 @@ public class JasminGenerator {
         generators.put(LiteralElement.class, this::generateLiteral);
         generators.put(Operand.class, this::generateOperand);
         generators.put(BinaryOpInstruction.class, this::generateBinaryOp);
+        generators.put(UnaryOpInstruction.class, this::generateUnaryOp);
         generators.put(ReturnInstruction.class, this::generateReturn);
         generators.put(CallInstruction.class, this::generateCall);
         generators.put(PutFieldInstruction.class, this::generatePutField);
@@ -254,11 +259,34 @@ public class JasminGenerator {
             case SUB -> "isub";
             case DIV -> "idiv";
             case AND -> "iand";
+            case ANDB -> "iand";
             case OR -> "ior";
+            case ORB -> "ior";
+            case XOR -> "ixor";
+            case SHL -> "ishl";
+            case SHR -> "ishr";
+            case SHRR -> "iushr";
+            case LTH -> "isub" + NL + "iflt lessBranch" + NL + "iconst_0" + NL + "goto endLessBranch" + NL + "lessBranch:" + NL + "iconst_1" + NL + "endLessBranch:";
+            case GTH -> "isub" + NL + "ifgt greaterBranch" + NL + "iconst_0" + NL + "goto endGreaterBranch" + NL + "greaterBranch:" + NL + "iconst_1" + NL + "endGreaterBranch:";
+            case EQ -> "isub" + NL + "ifeq equalBranch" + NL + "iconst_0" + NL + "goto endEqualBranch" + NL + "equalBranch:" + NL + "iconst_1" + NL + "endEqualBranch:";
+            case NEQ -> "isub" + NL + "ifne notEqualBranch" + NL + "iconst_0" + NL + "goto endNotEqualBranch" + NL + "notEqualBranch:" + NL + "iconst_1" + NL + "endNotEqualBranch:";
+            case LTE -> "isub" + NL + "ifle lessEqualBranch" + NL + "iconst_0" + NL + "goto endLessEqualBranch" + NL + "lessEqualBranch:" + NL + "iconst_1" + NL + "endLessEqualBranch:";
+            case GTE -> "isub" + NL + "ifge greaterEqualBranch" + NL + "iconst_0" + NL + "goto endGreaterEqualBranch" + NL + "greaterEqualBranch:" + NL + "iconst_1" + NL + "endGreaterEqualBranch:";
             default -> throw new NotImplementedException(binaryOp.getOperation().getOpType());
         };
 
         code.append(op).append(NL);
+
+        return code.toString();
+    }
+
+    private String generateUnaryOp(UnaryOpInstruction unaryOp) {
+        var code = new StringBuilder();
+        if(unaryOp.getOperation().getOpType() == OperationType.NOT ||
+           unaryOp.getOperation().getOpType() == OperationType.NOTB) {
+            code.append(generators.apply(unaryOp.getOperand()));
+            code.append("ineg").append(NL);
+        }
 
         return code.toString();
     }

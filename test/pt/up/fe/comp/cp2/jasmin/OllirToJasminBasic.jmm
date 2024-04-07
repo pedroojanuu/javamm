@@ -11,7 +11,8 @@ class SymbolTable extends Quicksort {
 	    boolean boolLocal1;
 
 		intLocal1 = 0;
-		boolLocal1 = 1;
+		boolLocal1 = true;
+		boolLocal2 = !boolLocal1;
 
 		return 0;
 	}
