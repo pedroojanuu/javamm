@@ -1,23 +1,25 @@
-import io;
-import Quicksort;
+import j;
 
-class CompileBasic extends Quicksort {
-
-    int intField;
-    boolean boolField;
-
-    public int method1() {
-        int intLocal1;
-        boolean boolLocal1;
-
-        return 0;
-    }
-
-    public boolean method2(int intParam1, boolean boolParam1) {
-        return boolParam1;
-    }
-
+class CompileArithmetic extends Classe {
 
     public static void main(String[] args) {
+
+    }
+
+    public boolean foo() {
+        int a;
+        int b;
+
+        a = 1;
+        b = 2;
+
+        return false;
+    }
+
+    public int bar(int b) {
+        boolean a;
+        a = false;
+
+        return 1*35;
     }
 }

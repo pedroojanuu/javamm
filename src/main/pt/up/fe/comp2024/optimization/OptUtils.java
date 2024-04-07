@@ -43,6 +43,14 @@ public class OptUtils {
         return toOllirType(type.getName());
     }
 
+    public static String toOllirBoolean(String value) {
+        return switch (value) {
+            case "false" -> "0";
+            case "true" -> "1";
+            default -> throw new NotImplementedException(value);
+        };
+    }
+
     private static String toOllirType(String typeName) {
 
         String type = "." + switch (typeName) {
