@@ -1,5 +1,6 @@
 package pt.up.fe.comp2024.optimization;
 
+import org.specs.comp.ollir.Ollir;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
@@ -84,7 +85,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
 
     private OllirExprResult visitBooleanLiteral(JmmNode node, Void unused) {
-        System.out.println(node);
         var boolType = new Type(TypeUtils.getBooleanTypeName(), false);
         String ollirBoolType = OptUtils.toOllirType(boolType);
         String code = OptUtils.toOllirBoolean(node.get("value")) + ollirBoolType;

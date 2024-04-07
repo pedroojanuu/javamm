@@ -1,25 +1,31 @@
-import j;
+import io;
+class Simple extends Complex {
 
-class CompileArithmetic extends Classe {
-
-    public static void main(String[] args) {
-
+    public int add(int a, int b){
+        int c;
+        c = 20;
+        return c;
     }
 
-    public boolean foo() {
+    public static void main(String[] args){
         int a;
         int b;
-
-        a = 1;
-        b = 2;
-
-        return false;
+        int c;
+        a = 20;
+        b = 10;
     }
 
-    public int bar(int b) {
-        boolean a;
-        a = false;
-
-        return 1*35;
+    public int constInstr(){
+        int c;
+        c = 0;
+        c = 4;
+        c = 8;
+        c = 14;
+        c = 250;
+        c = 400;
+        c = 1000;
+        c = 100474650;
+        c = 10;
+        return c;
     }
 }

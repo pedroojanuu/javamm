@@ -28,7 +28,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private final String PUBLIC = "public ";
     private final String RET = "ret";
 
-    private Map<JmmNode, String> varDeclTemp = new HashMap<>();
+    private Set<JmmNode> varDeclTemp = new HashSet<>();
 
     private final SymbolTable table;
 
@@ -139,7 +139,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(visit(varType));
 
         if (fromString(node.getParent().getKind()) == MAIN_METHOD || fromString(node.getParent().getKind()) == OTHER_METHOD) {
-            varDeclTemp.put(node, code.toString());
+            varDeclTemp.add(node);
             return "";
         }
 
@@ -194,7 +194,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(L_BRACKET);
 
         // rest of its children stmts
-        var afterParam = 1 + params.size();
+        var afterParam = params.size();
         for (int i = afterParam; i < node.getNumChildren(); i++) {
             var child = node.getJmmChild(i);
             if (!isVoid && i == node.getNumChildren()-1)
@@ -224,19 +224,41 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
     private String visitAssignStmt(JmmNode node, Void unused) {
 
-        JmmNode lhs = null;
-        String lhsCode = null;
-
-        for (JmmNode varDecl : varDeclTemp.keySet())
-            if (varDecl.get("name").equals(node.get("id"))) {
-                lhs = varDecl;
-                lhsCode = varDeclTemp.get(lhs);
-                break;
-            }
+        var lhs = exprVisitor.visit(node.getJmmChild(0)); // ERRADO
+        /* TODO: seria preciso que o lado esquerdo do assignment fosse
+        *   um nó...
+        *   por outro lado, este problema apenas se coloca para os
+        *   assignments, já que (verificar!) as outras referências aos
+        *   IDs têm nó próprio. */
+        var rhs = exprVisitor.visit(node.getJmmChild(0));
 
         StringBuilder code = new StringBuilder();
 
-        code.append(lhsCode);
+        System.out.println(lhs);
+
+        // code to compute the children
+        code.append(lhs.getComputation());
+        code.append(rhs.getComputation());
+
+        // code to compute self
+        // statement has type of lhs
+        Type thisType = TypeUtils.getExprType(node.getJmmChild(0), table, "");
+        String typeString = OptUtils.toOllirType(thisType);
+
+        code.append(lhs.getCode());
+        code.append(SPACE);
+
+        code.append(ASSIGN);
+        code.append(typeString);
+        code.append(SPACE);
+
+        code.append(rhs.getCode());
+
+        code.append(END_STMT);
+
+        return code.toString();
+
+        /*code.append(lhsCode);
         code.append(SPACE + ASSIGN);
 
         // code to compute self
@@ -248,7 +270,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         code.append(END_STMT);
 
-        return code.toString();
+        return code.toString();*/
     }
 
     private String visitReturnStmt(JmmNode node, Void unused) {
@@ -258,12 +280,9 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         StringBuilder code = new StringBuilder();
 
-        System.out.println(NL+node);
-
         var expr = OllirExprResult.EMPTY;
 
         expr = exprVisitor.visit(node);
-        System.out.println(expr);
 
         code.append(expr.getComputation());
         code.append(RET);
