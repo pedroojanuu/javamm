@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-//Notas falta - chamar metodos doutras classes, arrays, extends, constructors, True and false
+//Notas falta - chamar metodos doutras classes, extends, constructors, True and false, operators, objRef&Arrays
 
 /**
  * Generates Jasmin code from an OllirResult.
@@ -82,7 +82,9 @@ public class JasminGenerator {
         code.append(".class ").append(className).append(NL).append(NL);
 
         // TODO: Hardcoded to Object, needs to be expanded
-        code.append(".super java/lang/Object").append(NL);
+//        String superClass = classUnit.getSuperClass() == null ? "java/lang/Object" : classUnit.getSuperClass();
+        String superClass = "java/lang/Object";
+        code.append(".super ").append(superClass).append(NL).append(NL);
 
         // generate a single constructor method
         var defaultConstructor = """
@@ -123,11 +125,13 @@ public class JasminGenerator {
         } else if (type.getTypeOfElement() == ElementType.STRING) {
             return "Ljava/lang/String;";
         } else if (type.getTypeOfElement() == ElementType.OBJECTREF) {
-            return "L" + type.toString() + ";";
+            ClassType castType = (ClassType) type;
+            return "L" + castType.getName() + ";";
         } else if (type.getTypeOfElement() == ElementType.CLASS) {
             return "Ljava/lang/Class;";
         } else if(type.getTypeOfElement() == ElementType.ARRAYREF) {
-            return "[Ljava/lang/String;";
+            ArrayType castType = (ArrayType) type;
+            return "[" + transformToJasminType(castType.getElementType());
         } else {
             throw new NotImplementedException(type.getTypeOfElement());
         }
@@ -160,7 +164,6 @@ public class JasminGenerator {
             }
         }
 
-        // TODO: Hardcoded param types and return type, needs to be expanded
         code.append("\n.method ")
                 .append(modifier)
                 .append(staticModifier)
@@ -209,7 +212,6 @@ public class JasminGenerator {
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
 
-        // TODO: Hardcoded for int type, needs to be expanded
         if(assign.getTypeOfAssign().getTypeOfElement() == ElementType.INT32 ||
            assign.getTypeOfAssign().getTypeOfElement() == ElementType.BOOLEAN)
             code.append("istore ").append(reg).append(NL);
@@ -264,22 +266,18 @@ public class JasminGenerator {
     private String generateReturn(ReturnInstruction returnInst) {
         var code = new StringBuilder();
 
-        // TODO: Hardcoded to int return type, needs to be expanded
         if(returnInst.getOperand() == null)
             code.append("return").append(NL);
-        else {
+        else if(returnInst.getOperand().getType().getTypeOfElement() == ElementType.INT32 ||
+           returnInst.getOperand().getType().getTypeOfElement() == ElementType.BOOLEAN) {
             code.append(generators.apply(returnInst.getOperand()));
             code.append("ireturn").append(NL);
+        } else {
+            code.append(generators.apply(returnInst.getOperand()));
+            code.append("areturn").append(NL);
         }
 
         return code.toString();
-    }
-
-    private String getTypeFromObjectRef(Type type) {
-        if(type.getTypeOfElement() == ElementType.OBJECTREF) {
-            return type.toString().substring(10, type.toString().length() - 1);
-        }
-        return null;
     }
 
     private String generateCall(CallInstruction call) {
@@ -293,10 +291,11 @@ public class JasminGenerator {
             argList += transformToJasminType((arg.getType()));
         }
 
-        if (call.getInvocationType() == CallType.NEW)
-            return "new " + getTypeFromObjectRef(call.getReturnType()) + NL +
+        if (call.getInvocationType() == CallType.NEW) {
+            ClassType castType = (ClassType) call.getReturnType();
+            return "new " + castType.getName() + NL +
                     "dup" + NL;
-//                    "invokespecial " + getTypeFromObjectRef(call.getReturnType()) + "/<init>()V" + NL;
+        }
 
         if(call.getMethodNameTry().isEmpty())
             throw new RuntimeException("Call Method doesn't exist");
@@ -306,10 +305,15 @@ public class JasminGenerator {
         if(!call.getMethodName().isLiteral())
             throw new RuntimeException("Call Method Name is not a literal");
         LiteralElement callMethodName = (LiteralElement) call.getMethodName();
+        if(callMethodName.getType().getTypeOfElement() != ElementType.STRING)
+            throw new RuntimeException("Call Method Name must be a STRING");
+
+        ClassType callerType = (ClassType) call.getCaller().getType();
 
         // generate code for calling method
-        code.append("invokespecial ")
-                .append(currentClass.getClassName())
+        code.append(call.getInvocationType())
+                .append(" ")
+                .append(callerType.getName())
                 .append("/")
                 .append(callMethodName.getLiteral().substring(1, callMethodName.getLiteral().length() - 1))
                 .append("(" + argList + ")")
