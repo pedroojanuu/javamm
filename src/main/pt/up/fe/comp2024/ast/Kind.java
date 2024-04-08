@@ -43,7 +43,8 @@ public enum Kind {
     VAR_REF_EXPR,
     ARRAY_INDEX_EXPR,
     MEMBER_ACCESS_EXPR,
-    BOOLEAN_LITERAL_EXPR
+    BOOLEAN_LITERAL_EXPR,
+    ARGLIST
     ;
 
     private static final Set<Kind> STATEMENTS = Set.of(ASSIGN_STMT, RETURN_STMT);

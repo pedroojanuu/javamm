@@ -54,6 +54,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         //addVisit(VAR_ARGS, this::visitVarArgs);
         //addVisit(IF_STMT, this::visitIfStmt);
         //addVisit(WHILE_STMT, this::visitWhileStmt);
+        addVisit(EXPR_STMT, this::visitExprStmt);
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
         //addVisit(ARRAY_ASSIGN_STMT, this::visitArrayAssignStmt);
         addVisit(PAREN_EXPR, this::visitParenExpr);
@@ -222,6 +223,16 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         return code;
     }
 
+    private String visitExprStmt(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+
+        code.append(visit(node.getJmmChild(0)));
+
+        code.append(END_STMT);
+
+        return code.toString();
+    }
+
     private String visitAssignStmt(JmmNode node, Void unused) {
 
         var id = node.get("id");
@@ -308,7 +319,30 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private String visitMethodCallExpr(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
 
-        // TODO
+        List<JmmNode> args = node.getJmmChild(1).getChildren();
+        List<String> argsCode = new ArrayList<>();
+
+        args.forEach(arg -> {
+            var result = exprVisitor.visit(arg);
+            code.append(result.getComputation());
+            argsCode.add(result.getCode());
+        });
+
+        Type idType = TypeUtils.getIdLiteralExprType(node.getJmmChild(0), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow());
+
+        // id is an import
+        if (Objects.isNull(idType)) code.append("invokestatic(");
+
+        code.append(node.getJmmChild(0).get("id") + ", \"" + node.get("method") + "\", ");
+
+        for (int i = 0; i < argsCode.size()-1; i++)
+            code.append(argsCode.get(i) + ", ");
+        code.append(argsCode.getLast());
+
+        code.append(")");
+
+        // id is an import
+        if (Objects.isNull(idType)) code.append(".V");
 
         return code.toString();
     }
