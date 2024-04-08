@@ -12,16 +12,38 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-//Notas falta - chamar metodos doutras classes, extends, constructors, True and false, operators, objRef&Arrays
-//Duvidas o que operationSHRR seginifica
+//Notas falta - extends, constructors, True and false, operators, objRef&Arrays
+//Imports em jasmin
 //Erro no super class
 //Diferenca entre ANDB e AND
+//Duvidas o que operationSHRR seginifica
 //Temos que implementar short-circuiting
 
 /**
  * Generates Jasmin code from an OllirResult.
  * <p>
- * One JasminGenerator instance per OllirResult.
+ * One JasminGenimport Dunas;
+Test2 extends Object {
+
+.field public intField.i32;
+.field public boolField.bool;
+
+.method public method1().i32 {
+intLocal1.i32 :=.i32 0.i32;
+boolLocal1.bool :=.bool 1.bool;
+ret.i32 0.i32;
+}
+
+.method public methodDunas(d.Dunas).Dunas {
+d2.Dunas :=.Dunas new(Dunas).Dunas;
+invokespecial(d2.Dunas,"<init>").V;
+ret.Dunas d2.Dunas;
+}
+
+.construct Test2().V {
+invokespecial(this, "").V;
+}
+}erator instance per OllirResult.
  */
 public class JasminGenerator {
 
@@ -70,11 +92,29 @@ public class JasminGenerator {
 
         // This way, build is idempotent
         if (code == null) {
+//            List<String> importLines = findImportLines(ollirResult.getOllirCode());
+//            code = importLines.isEmpty() ? "" : String.join(NL, importLines) + NL + NL;
             code = generators.apply(ollirResult.getOllirClass());
         }
 
         return code;
     }
+
+//    public static List<String> findImportLines(String inputString) {
+//        List<String> importLines = new ArrayList<>();
+//
+//        // Split the input string into individual lines
+//        String[] lines = inputString.split("\n");
+//
+//        // Check each line
+//        for (String line : lines) {
+//            if (line.trim().startsWith("import")) {
+//                importLines.add(line);
+//            }
+//        }
+//
+//        return importLines;
+//    }
 
 
     private String generateClassUnit(ClassUnit classUnit) {
