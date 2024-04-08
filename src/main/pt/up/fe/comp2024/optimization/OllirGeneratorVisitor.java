@@ -194,7 +194,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(L_BRACKET);
 
         // rest of its children stmts
-        var afterParam = params.size();
+        var afterParam = params.size() + (isVoid? 0 : 1);
         for (int i = afterParam; i < node.getNumChildren(); i++) {
             var child = node.getJmmChild(i);
             if (!isVoid && i == node.getNumChildren()-1)
@@ -224,28 +224,24 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
     private String visitAssignStmt(JmmNode node, Void unused) {
 
-        var lhs = exprVisitor.visit(node.getJmmChild(0)); // ERRADO
-        /* TODO: seria preciso que o lado esquerdo do assignment fosse
-        *   um nó...
-        *   por outro lado, este problema apenas se coloca para os
-        *   assignments, já que (verificar!) as outras referências aos
-        *   IDs têm nó próprio. */
+        var id = node.get("id");
+        String methodName = node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow();
+        Type type = TypeUtils.getIdType(id, table, methodName);
+        String ollirType = OptUtils.toOllirType(type);
+
         var rhs = exprVisitor.visit(node.getJmmChild(0));
 
         StringBuilder code = new StringBuilder();
 
-        System.out.println(lhs);
-
         // code to compute the children
-        code.append(lhs.getComputation());
         code.append(rhs.getComputation());
 
         // code to compute self
         // statement has type of lhs
-        Type thisType = TypeUtils.getExprType(node.getJmmChild(0), table, "");
+        Type thisType = TypeUtils.getExprType(node.getJmmChild(0), table, methodName);
         String typeString = OptUtils.toOllirType(thisType);
 
-        code.append(lhs.getCode());
+        code.append(id + ollirType);
         code.append(SPACE);
 
         code.append(ASSIGN);
@@ -299,8 +295,12 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private String visitParenExpr(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
 
+        // code.append("(");
+
         JmmNode expr = node.getJmmChild(0);
         code.append(exprVisitor.visit(expr));
+
+        // code.append(")");
 
         return code.toString();
     }

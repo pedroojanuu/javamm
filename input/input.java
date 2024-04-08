@@ -2,9 +2,7 @@ import io;
 class Simple extends Complex {
 
     public int add(int a, int b){
-        int c;
-        c = 20;
-        return c;
+        return a+b;
     }
 
     public static void main(String[] args){
