@@ -10,9 +10,8 @@ class SymbolTable extends Quicksort {
 	    int intLocal1;
 	    boolean boolLocal1;
 
-		intLocal1 = 0;
+		intLocal1 = 0 + 10 - 1 * 5 / (3+9);
 		boolLocal1 = true;
-		boolLocal2 = !boolLocal1;
 
 		return 0;
 	}

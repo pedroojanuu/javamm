@@ -9,10 +9,12 @@ SymbolTable extends Quicksort {
 	.construct SymbolTable().V {
 		invokespecial(this, "<init>").V;
 	}
-	
+
 	.method public method1().i32 {
 		intLocal1.i32 :=.i32 0.i32;
 		boolLocal1.bool :=.bool 1.bool;
+		tmp0.bool :=.bool !.bool boolLocal1.bool;
+        boolLocal2.bool :=.bool tmp0.bool;
 
 		ret.i32 0.i32;
 	}
