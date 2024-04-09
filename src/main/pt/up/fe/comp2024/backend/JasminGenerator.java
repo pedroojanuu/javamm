@@ -22,28 +22,7 @@ import java.util.stream.Collectors;
 /**
  * Generates Jasmin code from an OllirResult.
  * <p>
- * One JasminGenimport Dunas;
-Test2 extends Object {
-
-.field public intField.i32;
-.field public boolField.bool;
-
-.method public method1().i32 {
-intLocal1.i32 :=.i32 0.i32;
-boolLocal1.bool :=.bool 1.bool;
-ret.i32 0.i32;
-}
-
-.method public methodDunas(d.Dunas).Dunas {
-d2.Dunas :=.Dunas new(Dunas).Dunas;
-invokespecial(d2.Dunas,"<init>").V;
-ret.Dunas d2.Dunas;
-}
-
-.construct Test2().V {
-invokespecial(this, "").V;
-}
-}erator instance per OllirResult.
+ * One JasminGenerator instance per OllirResult.
  */
 public class JasminGenerator {
 
@@ -92,30 +71,11 @@ public class JasminGenerator {
 
         // This way, build is idempotent
         if (code == null) {
-//            List<String> importLines = findImportLines(ollirResult.getOllirCode());
-//            code = importLines.isEmpty() ? "" : String.join(NL, importLines) + NL + NL;
             code = generators.apply(ollirResult.getOllirClass());
         }
 
         return code;
     }
-
-//    public static List<String> findImportLines(String inputString) {
-//        List<String> importLines = new ArrayList<>();
-//
-//        // Split the input string into individual lines
-//        String[] lines = inputString.split("\n");
-//
-//        // Check each line
-//        for (String line : lines) {
-//            if (line.trim().startsWith("import")) {
-//                importLines.add(line);
-//            }
-//        }
-//
-//        return importLines;
-//    }
-
 
     private String generateClassUnit(ClassUnit classUnit) {
 
@@ -239,7 +199,6 @@ public class JasminGenerator {
     private String generateAssign(AssignInstruction assign) {
         if(currentMethod == null)
             throw new RuntimeException("Method not set");
-        // Falta Boolean Assign
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
@@ -292,7 +251,6 @@ public class JasminGenerator {
         code.append(generators.apply(binaryOp.getRightOperand()));
 
         // apply operation
-        // Falta Muitos Operadores
         var op = switch (binaryOp.getOperation().getOpType()) {
             case ADD -> "iadd";
             case MUL -> "imul";
