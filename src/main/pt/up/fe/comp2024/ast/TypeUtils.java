@@ -4,7 +4,12 @@ import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
+import pt.up.fe.comp.jmm.report.Report;
+import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2024.symboltable.SymbolTableUtils;
+import pt.up.fe.comp2024.utils.ReportUtils;
+
+import java.util.List;
 
 public class TypeUtils {
 
@@ -48,38 +53,6 @@ public class TypeUtils {
     public static String getStringTypeName() {
         return STRING_TYPE_NAME;
     }
-
-    private static boolean isLocal(String name, String currentMethod, SymbolTable table) {
-        return table.getLocalVariables(currentMethod).stream()
-                .anyMatch(varDecl -> varDecl.getName().equals(name));
-    }
-    private static Symbol getLocal(String name, String currentMethod, SymbolTable table) {
-        return table.getLocalVariables(currentMethod).stream()
-                .filter(varDecl -> varDecl.getName().equals(name))
-                .findFirst()
-                .orElse(null);
-    }
-    private static boolean isParam(String name, String currentMethod, SymbolTable table) {
-        return table.getParameters(currentMethod).stream()
-                .anyMatch(param -> param.getName().equals(name));
-    }
-    private static Symbol getParam(String name, String currentMethod, SymbolTable table) {
-        return table.getParameters(currentMethod).stream()
-                .filter(param -> param.getName().equals(name))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private static boolean isField(String name, SymbolTable table) {
-        return table.getFields().stream()
-                .anyMatch(f -> f.getName().equals(name));
-    }
-    private static Symbol getField(String name, SymbolTable table) {
-        return table.getFields().stream()
-                .filter(f -> f.getName().equals(name))
-                .findFirst()
-                .orElse(null);
-    }
     /**
      * Gets the {@link Type} of an arbitrary expression.
      *
@@ -87,22 +60,34 @@ public class TypeUtils {
      * @param table
      * @return
      */
-    public static Type getExprType(JmmNode expr, SymbolTable table, String currentMethod) {
+    public static Type getExprType(JmmNode expr, SymbolTable table, String currentMethod, List<Report> reports) {
         var kind = Kind.fromString(expr.getKind());
         return switch (kind) {
-            case BINARY_EXPR -> getBinExprType(expr);
-            case ID_LITERAL_EXPR -> getIdLiteralExprType(expr, table, currentMethod);
+            case BINARY_EXPR -> getBinExprType(expr, table, currentMethod, reports);
+            case ID_LITERAL_EXPR -> getIdLiteralExprType(expr, table, currentMethod, reports);
             case INT_LITERAL_EXPR, ARRAY_INDEX_EXPR -> getIntType();
-            case MEMBER_ACCESS_EXPR -> getMemberAccessExprType(expr, table, currentMethod);
+            case MEMBER_ACCESS_EXPR -> getMemberAccessExprType(expr, table, currentMethod, reports);
             case THIS_EXPR -> getMyClassType(table.getClassName(), table.getSuper());
             case NEW_OBJ_EXPR -> getNewObjExprType(expr, table);
-            case METHOD_CALL_EXPR -> getMethodCallExprType(expr, table, currentMethod);
+            case METHOD_CALL_EXPR -> getMethodCallExprType(expr, table, currentMethod, reports);
             case NEW_ARRAY_EXPR, ARRAY_DECL_EXPR -> getIntArrayType();
             case BOOLEAN_LITERAL_EXPR -> getBooleanType();
+            case PAREN_EXPR -> getParenthesisExprType(expr, table, currentMethod, reports);
+            case NOT_EXPR -> getNotExprType(expr, table, currentMethod, reports);
             default -> throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'");
         };
     }
-
+    public static Type getNotExprType(JmmNode expr, SymbolTable table, String currentMethod, List<Report> reports) {
+        var innerExpr = expr.getChild(0);
+        var innerType = getExprType(innerExpr, table, currentMethod, reports);
+        if (reports != null && !reports.isEmpty() && innerType != null && !getBooleanType().equals(innerType)) {
+            reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, expr, "Invalid type for operator '!'"));
+        }
+        return getBooleanType();
+    }
+    public static Type getParenthesisExprType(JmmNode expr, SymbolTable table, String currentMethod, List<Report> reports) {
+        return getExprType(expr.getChild(0), table, currentMethod, reports);
+    }
     /**
      *
      * @param methodCallExpr
@@ -110,13 +95,13 @@ public class TypeUtils {
      * @param currentMethod
      * @return Message for the error report if the method call is invalid, null otherwise
      */
-    public static String isValidMethodCall(JmmNode methodCallExpr, SymbolTable table, String currentMethod) {
+    public static String isValidMethodCall(JmmNode methodCallExpr, SymbolTable table, String currentMethod, List<Report> reports) {
         var defaultErrorMessage = "Unknown method call.";
         var invalidArgumentsMessage = "Invalid arguments for method call.";
 
         var object = methodCallExpr.getObject("object", JmmNode.class);
         var methodName = methodCallExpr.get("method");
-        var objectType = getExprType(object, table, currentMethod);
+        var objectType = getExprType(object, table, currentMethod, reports);
 
         // e.g.: this.method(params); a = this, a.method(params);
         if (table.getClassName().equals(getName(objectType))) {
@@ -136,7 +121,7 @@ public class TypeUtils {
             // the same type as an array, or directly an array
             for (int i = 0; i < paramsST.size(); i++) {
                 var paramType = paramsST.get(i).getType();
-                var argType = getExprType(argList.getChild(i), table, currentMethod);
+                var argType = getExprType(argList.getChild(i), table, currentMethod, reports);
                 if (paramType.hasAttribute("varArgs")) {
                     varArgsIdx = i;
                     break;
@@ -152,12 +137,12 @@ public class TypeUtils {
                 return null;
             }
 
-            var argType = getExprType(argList.getChild(varArgsIdx), table, currentMethod);
+            var argType = getExprType(argList.getChild(varArgsIdx), table, currentMethod, reports);
             if (getIntArrayType().equals(argType)) {
                 return null;
             }
             for (int i = varArgsIdx; i < argList.getNumChildren(); i++) {
-                argType = getExprType(argList.getChild(i), table, currentMethod);
+                argType = getExprType(argList.getChild(i), table, currentMethod, reports);
                 if (!areTypesAssignable(argType, getIntType(), table)) {   // just compare to int
                     return invalidArgumentsMessage;
                 }
@@ -176,10 +161,10 @@ public class TypeUtils {
     private static String getName(Type type) {
         return type == null ? null : type.getName();
     }
-    public static Type getMethodCallExprType(JmmNode methodCallExpr, SymbolTable table, String currentMethod) {
+    public static Type getMethodCallExprType(JmmNode methodCallExpr, SymbolTable table, String currentMethod, List<Report> reports) {
         var methodName = methodCallExpr.get("method");
         var object = methodCallExpr.getObject("object", JmmNode.class);
-        var objectType = getExprType(object, table, currentMethod);
+        var objectType = getExprType(object, table, currentMethod, reports);
 
         // e.g.: this.method(params); a = this, a.method(params);
         if (table.getClassName().equals(getName(objectType))) {
@@ -188,18 +173,22 @@ public class TypeUtils {
                     .findFirst()
                     .orElse(null);
 
-            if (method == null) {
-                throw new RuntimeException("Unknown method '" + methodName + "'");
+            if (method == null && reports != null) {
+                reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, methodCallExpr, "Unknown method '" + methodName + " for class '" + table.getClassName()));
             }
 
             return table.getReturnType(method);
         }
 
+        System.out.println(objectType);
         // assume that methods from imports are valid
-        if (SymbolTableUtils.hasImport(table, getName(objectType))) {
-            return null;    // needs to be handled
+        if (SymbolTableUtils.hasImport(table, getName(objectType)) || objectType == null) {
+            return null;
         }
-        throw new RuntimeException("Unknown method '" + methodName + "'");
+        if (reports != null) {
+            reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, methodCallExpr, "Unknown method '" + methodName + "'"));
+        }
+        return null;
     }
     public static Type getNewObjExprType(JmmNode newObjExpr, SymbolTable table) {
         var className = newObjExpr.get("id");
@@ -208,52 +197,83 @@ public class TypeUtils {
         }
         return getMyClassType(className, "");
     }
-    public static Type getMemberAccessExprType(JmmNode memberAccessExpr, SymbolTable table, String currentMethod) {
+    public static Type getMemberAccessExprType(JmmNode memberAccessExpr, SymbolTable table, String currentMethod, List<Report> reports) {
         var member = memberAccessExpr.get("member");
         if (member.equals("length")) {
             return getIntType();
         }
-        if (isField(member, table)) {
-            return getField(member, table).getType();
+        if (SymbolTableUtils.isField(member, table)) {
+            return SymbolTableUtils.getField(member, table).getType();
         }
 
-        // TODO: Might have to check imports
-        throw new RuntimeException("Unknown member access '" + member + "'");
+        reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, memberAccessExpr, "Unknown member access '" + member + "'"));
+        return null;
     }
-    private static Type getBinExprType(JmmNode binaryExpr) {
+    private static Type getBinExprType(JmmNode binaryExpr, SymbolTable table, String currentMethod, List<Report> reports) {
         String operator = binaryExpr.get("op");
-
-        return switch (operator) {
-            case "+", "-", "/", "*" -> getIntType();
-            case "<" -> getBooleanType();
+        JmmNode left = binaryExpr.getObject("left", JmmNode.class);
+        JmmNode right = binaryExpr.getObject("right", JmmNode.class);
+        Type leftType = getExprType(left, table, currentMethod, reports);
+        Type rightType = getExprType(right, table, currentMethod, reports);
+        switch (operator) {
+            case "+", "-", "/", "*" -> {
+                Type intType = getIntType();
+                if (intType.equals(leftType) && intType.equals(rightType)) {
+                    return getIntType();
+                }
+                if (reports != null) {
+                    reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, binaryExpr, "Invalid types for operator '" + operator + "'"));
+                }
+                return null;
+            }
+            case "<" -> {
+                Type intType = getIntType();
+                if (intType.equals(leftType) && intType.equals(rightType)) {
+                    return getBooleanType();
+                }
+                if (reports != null) {
+                    reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, binaryExpr, "Invalid types for operator '" + operator + "'"));
+                }
+                return null;
+            }
+            case "&&" -> {
+                Type booleanType = getBooleanType();
+                if (booleanType.equals(leftType) && booleanType.equals(rightType)) {
+                    return getBooleanType();
+                }
+                if (reports != null) {
+                    reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, binaryExpr, "Invalid types for operator '" + operator + "'"));
+                }
+                return null;
+            }
 
             default ->
                     throw new RuntimeException("Unknown operator '" + operator + "' of expression '" + binaryExpr + "'");
-        };
+        }
     }
 
-    public static Type getIdType(String id, SymbolTable table, String currentMethod) {
-        if (isLocal(id, currentMethod, table)) {
-            return getLocal(id, currentMethod, table).getType();
+    public static Type getIdType(String id, JmmNode node, SymbolTable table, String currentMethod, List<Report> reports) {
+        if (SymbolTableUtils.isLocal(id, currentMethod, table)) {
+            return SymbolTableUtils.getLocal(id, currentMethod, table).getType();
         }
 
-        if (isParam(id, currentMethod, table)) {
-            return getParam(id, currentMethod, table).getType();
+        if (SymbolTableUtils.isParam(id, currentMethod, table)) {
+            return SymbolTableUtils.getParam(id, currentMethod, table).getType();
         }
 
-        if (isField(id, table)) {
-            return getField(id, table).getType();
+        if (SymbolTableUtils.isField(id, table)) {
+            return SymbolTableUtils.getField(id, table).getType();
         }
 
         if (SymbolTableUtils.hasImport(table, id)) {
             return null;
         }
-
-        throw new RuntimeException("Unknown variable '" + id + "'");
+        ReportUtils.buildErrorReport(Stage.SEMANTIC, node, "Unknown variable '" + id + "'");
+        return null;
     }
-    public static Type getIdLiteralExprType(JmmNode idLiteralExpr, SymbolTable table, String currentMethod) {
+    public static Type getIdLiteralExprType(JmmNode idLiteralExpr, SymbolTable table, String currentMethod, List<Report> reports) {
         var name = idLiteralExpr.get("id");
-        return getIdType(name, table, currentMethod);
+        return getIdType(name, idLiteralExpr, table, currentMethod, reports);
     }
 
 

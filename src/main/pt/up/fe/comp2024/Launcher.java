@@ -13,10 +13,40 @@ import pt.up.fe.comp2024.parser.JmmParserImpl;
 import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.SpecsSystem;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 
 public class Launcher {
+    private static void testFile(String fileName) {
+        /*
+        File inputFile = new File(fileName);
+        if (!inputFile.isFile()) {
+            throw new RuntimeException("Invalid file " + fileName);
+        }
+        String code = SpecsIo.read(inputFile);
+
+        // Parsing stage
+        JmmParserImpl parser = new JmmParserImpl();
+        JmmParserResult parserResult = parser.parse(code, config);
+        TestUtils.noErrors(parserResult.getReports());
+
+        // Print AST
+        System.out.println(parserResult.getRootNode().toTree());
+
+
+        // Semantic Analysis stage
+        JmmAnalysisImpl sema = new JmmAnalysisImpl();
+        JmmSemanticsResult semanticsResult = sema.semanticAnalysis(parserResult);
+        System.out.println(semanticsResult.getReports());
+        TestUtils.noErrors(semanticsResult.getReports());
+
+        // print the contents of the symbol table (e.g. imports, ...)
+        var symbolTable = semanticsResult.getSymbolTable();
+        System.out.println(symbolTable);
+         */
+    }
     public static void main(String[] args) {
         SpecsSystem.programStandardInit();
 

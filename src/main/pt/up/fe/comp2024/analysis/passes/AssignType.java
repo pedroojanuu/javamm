@@ -25,9 +25,8 @@ public class AssignType extends AnalysisVisitor {
         var id = assign.get("id");
         var expr = assign.getObject("value", JmmNode.class);
 
-        var leftType = TypeUtils.getIdType(id, table, currentMethod);
-        var rightType = TypeUtils.getExprType(expr, table, currentMethod);
-
+        var leftType = TypeUtils.getIdType(id, assign, table, currentMethod, this.getReports());
+        var rightType = TypeUtils.getExprType(expr, table, currentMethod, this.getReports());
         if (!TypeUtils.areTypesAssignable(rightType, leftType, table)) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, assign, "Assignment with different types"));
         }
