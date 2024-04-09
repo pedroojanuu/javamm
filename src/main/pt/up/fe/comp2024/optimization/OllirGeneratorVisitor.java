@@ -319,25 +319,34 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private String visitMethodCallExpr(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
 
-        List<JmmNode> args = node.getJmmChild(1).getChildren();
+        List<JmmNode> args = null;
+
+        if (node.getChildren().size() > 1)
+            if (node.getJmmChild(1).getKind().equals("Arglist"))
+                args = node.getJmmChild(1).getChildren();
+
         List<String> argsCode = new ArrayList<>();
 
-        args.forEach(arg -> {
-            var result = exprVisitor.visit(arg);
-            code.append(result.getComputation());
-            argsCode.add(result.getCode());
-        });
+        if (args != null)
+            args.forEach(arg -> {
+                var result = exprVisitor.visit(arg);
+                code.append(result.getComputation());
+                argsCode.add(result.getCode());
+            });
 
         Type idType = TypeUtils.getIdLiteralExprType(node.getJmmChild(0), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow());
 
         // id is an import
         if (Objects.isNull(idType)) code.append("invokestatic(");
 
-        code.append(node.getJmmChild(0).get("id") + ", \"" + node.get("method") + "\", ");
+        code.append(node.getJmmChild(0).get("id") + ", \"" + node.get("method") + "\"");
 
-        for (int i = 0; i < argsCode.size()-1; i++)
-            code.append(argsCode.get(i) + ", ");
-        code.append(argsCode.getLast());
+        if (!argsCode.isEmpty()) {
+            code.append(", ");
+            for (int i = 0; i < argsCode.size()-1; i++)
+                code.append(argsCode.get(i) + ", ");
+            code.append(argsCode.getLast());
+            }
 
         code.append(")");
 

@@ -1,18 +1,6 @@
-import io;
-
-class CompileMethodInvocation {
-
+import ioPlus;
+class HelloWorld {
     public static void main(String[] args) {
-
-    }
-
-    public int foo() {
-        int a;
-
-        a = 1;
-
-        io.println(2*a, 3*25, true);
-
-        return 0;
+        ioPlus.printHelloWorld(35, 2*1, 7/3, 9+4);
     }
 }
