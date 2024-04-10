@@ -64,7 +64,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(NOT_EXPR, this::visitNotExpr);
         //addVisit(NEW_ARRAY_EXPR, this::visitNewArrayExpr);
         addVisit(NEW_OBJ_EXPR, this::visitNewObjExpr);
-        addVisit(THIS_EXPR, this::visitThisExpr);
         //addVisit(ARRAY_DECL_EXPR, this::visitArrayDeclExpr);
 
         setDefaultVisit(this::defaultVisit);
@@ -226,7 +225,11 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private String visitExprStmt(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
 
-        code.append(visit(node.getJmmChild(0)));
+        System.out.println(node.getJmmChild(0));
+        var res = exprVisitor.visit(node.getJmmChild(0));
+
+        code.append(res.getComputation());
+        code.append(res.getCode());
 
         code.append(END_STMT);
 
@@ -319,7 +322,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private String visitMethodCallExpr(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
 
-        List<JmmNode> args = null;
+        /*List<JmmNode> args = null;
 
         if (node.getChildren().size() > 1)
             if (node.getJmmChild(1).getKind().equals("Arglist"))
@@ -351,7 +354,11 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(")");
 
         // id is an import
-        if (Objects.isNull(idType)) code.append(".V");
+        if (Objects.isNull(idType)) code.append(".V");*/
+
+        var res = exprVisitor.visit(node);
+        code.append(res.getComputation());
+        code.append(res.getCode());
 
         return code.toString();
     }
@@ -373,14 +380,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     }
 
     private String visitNewObjExpr(JmmNode node, Void unused) {
-        StringBuilder code = new StringBuilder();
-
-        // TODO
-
-        return code.toString();
-    }
-
-    private String visitThisExpr(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
 
         // TODO
