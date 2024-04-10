@@ -1,7 +1,7 @@
 import io;
 class Factorial {
     int a;
-    int... b;
+    // int... b;    // Variable declarations, field declarations and method returns cannot be vararg
     String e;
     int myMain;
     String _mainvalue;

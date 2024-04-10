@@ -60,6 +60,14 @@ public class CompilerConfig {
 
         return shortToLong.containsKey(shortOpt);
     }
+    public static boolean putFile(Map<String, String> config, String path) {
+        var file = new File(path);
+        if (!file.isFile()) {
+            return false;
+        }
+        config.put(INPUT_FILE, file.getAbsolutePath());
+        return true;
+    }
 
     public static Map<String, String> parseArgs(String[] args) {
 

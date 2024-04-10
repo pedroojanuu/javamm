@@ -24,12 +24,14 @@ public class BinExprTypes extends AnalysisVisitor  {
         return null;
     }
     private void checkArithmetic(JmmNode left, JmmNode right, Type leftType, Type rightType, SymbolTable table) {
-        if (!leftType.equals(TypeUtils.getIntType()) || !rightType.equals(TypeUtils.getIntType())) {
+        var intType = TypeUtils.getIntType();
+        if (!intType.equals(leftType) || !intType.equals(rightType)) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, left, "Arithmetic operation with non-integer types"));
         }
     }
     private void checkComparison(JmmNode left, JmmNode right, Type leftType, Type rightType, SymbolTable table) {
-        if (!leftType.equals(TypeUtils.getIntType()) || !rightType.equals(TypeUtils.getIntType())) {
+        var intType = TypeUtils.getIntType();
+        if (!intType.equals(leftType) || !intType.equals(rightType)) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, left, "Comparison operation with non-integer types"));
         }
     }
@@ -38,10 +40,10 @@ public class BinExprTypes extends AnalysisVisitor  {
         var right = binaryExpr.getObject("right", JmmNode.class);
         var op = binaryExpr.get("op");
 
-        var leftType = TypeUtils.getExprType(left, table, currentMethod);
-        var rightType = TypeUtils.getExprType(right, table, currentMethod);
+        var leftType = TypeUtils.getExprType(left, table, currentMethod, this.getReports());
+        var rightType = TypeUtils.getExprType(right, table, currentMethod, this.getReports());
 
-        if (!leftType.equals(rightType)) {
+        if (leftType != null && !leftType.equals(rightType)) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, binaryExpr, "Binary expression with different types"));
         }
         else {
@@ -49,6 +51,12 @@ public class BinExprTypes extends AnalysisVisitor  {
                 checkArithmetic(left, right, leftType, rightType, table);
             } else if (op.equals("<")) {
                 checkComparison(left, right, leftType, rightType, table);
+            }
+            else if (op.equals("&&") || op.equals("||")) {
+                var booleanType = TypeUtils.getBooleanType();
+                if (!booleanType.equals(leftType) || !booleanType.equals(rightType)) {
+                    addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, binaryExpr, "Logical operation with non-boolean types"));
+                }
             }
             else {
                 addReport(Report.newError(Stage.SEMANTIC,
