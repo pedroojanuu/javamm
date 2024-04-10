@@ -72,7 +72,7 @@ public class JasminGenerator {
         // This way, build is idempotent
         if (code == null) {
             code = generators.apply(ollirResult.getOllirClass());
-//            if(true) throw new RuntimeException(code);
+            if(true) throw new RuntimeException(code);
         }
 
         return code;
@@ -317,7 +317,9 @@ public class JasminGenerator {
         }
 
         // Append code to load caller object
-        code.append(generators.apply(call.getCaller()));
+        if(call.getInvocationType() == CallType.invokevirtual ||
+           call.getInvocationType() == CallType.invokespecial)
+            code.append(generators.apply(call.getCaller()));
 
         String argList = "";
 
