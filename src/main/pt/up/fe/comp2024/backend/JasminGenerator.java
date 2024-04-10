@@ -72,6 +72,7 @@ public class JasminGenerator {
         // This way, build is idempotent
         if (code == null) {
             code = generators.apply(ollirResult.getOllirClass());
+//            if(true) throw new RuntimeException(code);
         }
 
         return code;
@@ -217,7 +218,7 @@ public class JasminGenerator {
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
 
         if(assign.getTypeOfAssign().getTypeOfElement() == ElementType.INT32 ||
-           assign.getTypeOfAssign().getTypeOfElement() == ElementType.BOOLEAN)
+                assign.getTypeOfAssign().getTypeOfElement() == ElementType.BOOLEAN)
             code.append("istore ").append(reg).append(NL);
         else
             code.append("astore ").append(reg).append(NL);
@@ -237,7 +238,7 @@ public class JasminGenerator {
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
         if(operand.getType().getTypeOfElement() == ElementType.INT32 ||
-           operand.getType().getTypeOfElement() == ElementType.BOOLEAN)
+                operand.getType().getTypeOfElement() == ElementType.BOOLEAN)
             return "iload " + reg + NL;
         else
             return "aload " + reg + NL;
@@ -281,7 +282,7 @@ public class JasminGenerator {
     private String generateUnaryOp(UnaryOpInstruction unaryOp) {
         var code = new StringBuilder();
         if(unaryOp.getOperation().getOpType() == OperationType.NOT ||
-           unaryOp.getOperation().getOpType() == OperationType.NOTB) {
+                unaryOp.getOperation().getOpType() == OperationType.NOTB) {
             code.append(generators.apply(unaryOp.getOperand()));
             code.append("ineg").append(NL);
         }
@@ -295,7 +296,7 @@ public class JasminGenerator {
         if(returnInst.getOperand() == null)
             code.append("return").append(NL);
         else if(returnInst.getOperand().getType().getTypeOfElement() == ElementType.INT32 ||
-           returnInst.getOperand().getType().getTypeOfElement() == ElementType.BOOLEAN) {
+                returnInst.getOperand().getType().getTypeOfElement() == ElementType.BOOLEAN) {
             code.append(generators.apply(returnInst.getOperand()));
             code.append("ireturn").append(NL);
         } else {
@@ -309,18 +310,21 @@ public class JasminGenerator {
     private String generateCall(CallInstruction call) {
         var code = new StringBuilder();
 
+        if (call.getInvocationType() == CallType.NEW) {
+            ClassType castType = (ClassType) call.getReturnType();
+            return "new " + castType.getName() + NL +
+                    "dup" + NL;
+        }
+
+        // Append code to load caller object
+        code.append(generators.apply(call.getCaller()));
+
         String argList = "";
 
         // generate code for loading arguments
         for (var arg : call.getArguments()) {
             code.append(generators.apply(arg));
             argList += transformToJasminType((arg.getType()));
-        }
-
-        if (call.getInvocationType() == CallType.NEW) {
-            ClassType castType = (ClassType) call.getReturnType();
-            return "new " + castType.getName() + NL +
-                    "dup" + NL;
         }
 
         if(call.getMethodNameTry().isEmpty())
