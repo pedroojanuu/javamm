@@ -28,7 +28,7 @@ ret.bool tmp8.bool;
 .method public recursiveMethod(n.i32).i32 {
 test.Test :=.Test new(Test).Test;
 invokespecial(test.Test,"<init>").V;
-tmp10.i32 :=.i32 invokevirtual(test.Test, "foo").i32;
+tmp10.i32 :=.i32 invokestatic(Test, "foo").i32;
 tmp11.i32 :=.i32 invokevirtual(this, "recursiveMethod", tmp10.i32).i32;
 ret.i32 tmp11.i32;
 }
