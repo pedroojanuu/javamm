@@ -98,13 +98,15 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
     }
 
     private OllirExprResult visitMethodCallExpr(JmmNode node, Void unused) {
-        var object = node.getJmmChild(0);
-        OllirExprResult objectCode = null;
-        String invokeType = null;
-        if (object.getKind().equals("IdLiteralExpr")) { // object is import
-            objectCode = new OllirExprResult(object.get("id"));
-            invokeType = "static";
-        } else objectCode = visit(object);
+
+        String objectName = visit(node.getJmmChild(0)).getCode();
+        String methodName = node.get("method");
+        String type = "";
+        try {
+            type = OptUtils.toOllirType(table.getReturnType(methodName));
+        } catch (Exception e) {
+            type = ".V";
+        }
 
         List<OllirExprResult> argsResult = new ArrayList<>();
 
@@ -119,24 +121,27 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         for (OllirExprResult argResult : argsResult)
             computation.append(argResult.getComputation());
 
-        if (objectCode.getCode().equals("this")) {
-            computation.append(OptUtils.getTemp());
+        String resultTemp = "";
+
+        if (objectName.equals("this")) {
+            resultTemp = OptUtils.getTemp();
+            computation.append(resultTemp);
+            computation.append(type + " " + ASSIGN + type + " ");
+            computation.append("invokevirtual(this, \"" + methodName + "\"");
+            if (!argsResult.isEmpty()) {
+                computation.append(", ");
+                for (int i = 0; i < argsResult.size() - 1; i++)
+                    computation.append(argsResult.get(i).getCode() + ", ");
+                computation.append(argsResult.getLast().getCode());
+            }
+            computation.append(")" + type + END_STMT);
         }
 
-        /*// code to compute self
-        Type resType = TypeUtils.getExprType(node, table, "");
-        String resOllirType = OptUtils.toOllirType(resType);
-        String code = OptUtils.getTemp() + resOllirType;
+        StringBuilder code = new StringBuilder();
 
-        computation.append(code).append(SPACE)
-                .append(ASSIGN).append(resOllirType).append(SPACE)
-                .append(lhs.getCode()).append(SPACE);
+        code.append(resultTemp + type);
 
-        Type type = TypeUtils.getExprType(node, table, "");
-        computation.append(node.get("op")).append(OptUtils.toOllirType(type)).append(SPACE)
-                .append(rhs.getCode()).append(END_STMT);*/
-
-        return new OllirExprResult("", computation);
+        return new OllirExprResult(code.toString(), computation);
     }
 
     private OllirExprResult visitThisExpr(JmmNode node, Void unused) {

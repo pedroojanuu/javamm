@@ -3,15 +3,13 @@ import io;
 class Simple {
 
     public int add(int a, int b){
-        int b;
-        b = this.constInstr(1*2);
 
-        io.print();
+        io.print(a+1, b*2);
 
-        return b;
+        return 1;
     }
 
-    public int constInstr(int a) {
-        return 1;
+    public boolean constInstr(int a, boolean b, int c) {
+        return true;
     }
 }
