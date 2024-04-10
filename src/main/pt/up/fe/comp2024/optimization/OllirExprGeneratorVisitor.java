@@ -6,6 +6,7 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.ast.PreorderJmmVisitor;
 import pt.up.fe.comp2024.ast.TypeUtils;
+import pt.up.fe.comp2024.symboltable.SymbolTableUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -118,6 +119,8 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
         StringBuilder computation = new StringBuilder();
 
+        StringBuilder code = new StringBuilder();
+
         for (OllirExprResult argResult : argsResult)
             computation.append(argResult.getComputation());
 
@@ -135,9 +138,18 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 computation.append(argsResult.getLast().getCode());
             }
             computation.append(")" + type + END_STMT);
+        } else if (TypeUtils.getIdLiteralExprType(node.getJmmChild(0), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow()) != null) {
+            // field or local variable
+        } else {    // import
+            code.append("invokestatic(" + objectName + ", \"" + methodName + "\"");
+            if (!argsResult.isEmpty()) {
+                code.append(", ");
+                for (int i = 0; i < argsResult.size() - 1; i++)
+                    code.append(argsResult.get(i).getCode() + ", ");
+                code.append(argsResult.getLast().getCode());
+            }
+            code.append(")");
         }
-
-        StringBuilder code = new StringBuilder();
 
         code.append(resultTemp + type);
 

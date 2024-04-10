@@ -3,8 +3,11 @@ import io;
 class Simple {
 
     public int add(int a, int b){
+        boolean x;
 
-        io.print(a+1, b*2);
+        io.print(1*2, 2/5, 3-5, false);
+
+        x = this.constInstr(1, false, 2*5);
 
         return 1;
     }
