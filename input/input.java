@@ -1,18 +1,37 @@
 import io;
-
 class Simple {
 
     public int add(int a, int b){
-        boolean x;
-
-        io.print(1*2, 2/5, 3-5, false);
-
-        x = this.constInstr(1, false, 2*5);
-
-        return 1;
+        int c;
+        c = a + this.constInstr();
+        return c;
     }
 
-    public boolean constInstr(int a, boolean b, int c) {
-        return true;
+    public static void main(String[] args){
+        int a;
+        int b;
+        int c;
+        Simple s;
+        a = 20;
+        b = 10;
+        s = new Simple();
+        c = s.add(a,b);
+        io.println(c);
     }
+
+    public int constInstr(){
+        int c;
+        c = 0;
+        c = 4;
+        c = 8;
+        c = 14;
+        c = 250;
+        c = 400;
+        c = 1000;
+        c = 100474650;
+        c = 10;
+        return c;
+    }
+
+
 }

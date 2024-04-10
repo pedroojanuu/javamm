@@ -36,6 +36,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(BOOLEAN_LITERAL_EXPR, this::visitBooleanLiteral);
         addVisit(METHOD_CALL_EXPR, this::visitMethodCallExpr);
         addVisit(THIS_EXPR, this::visitThisExpr);
+        addVisit(NEW_OBJ_EXPR, this::visitNewObjExpr);
 
         setDefaultVisit(this::defaultVisit);
     }
@@ -140,7 +141,19 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             computation.append(")" + type + END_STMT);
         } else if (TypeUtils.getIdLiteralExprType(node.getJmmChild(0), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow()) != null) {
             // field or local variable
-        } else {    // import
+            resultTemp = OptUtils.getTemp();
+            computation.append(resultTemp);
+            computation.append(type + " " + ASSIGN + type + " ");
+            computation.append("invokevirtual(" + objectName + ", \"" + methodName + "\"");
+            if (!argsResult.isEmpty()) {
+                computation.append(", ");
+                for (int i = 0; i < argsResult.size() - 1; i++)
+                    computation.append(argsResult.get(i).getCode() + ", ");
+                computation.append(argsResult.getLast().getCode());
+            }
+            computation.append(")" + type + END_STMT);
+        } else {
+            // import
             code.append("invokestatic(" + objectName + ", \"" + methodName + "\"");
             if (!argsResult.isEmpty()) {
                 code.append(", ");
@@ -158,6 +171,21 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
     private OllirExprResult visitThisExpr(JmmNode node, Void unused) {
         return new OllirExprResult("this");
+    }
+
+    private OllirExprResult visitNewObjExpr(JmmNode node, Void unused) {
+        StringBuilder computation = new StringBuilder();
+
+        String type = node.get("id");
+        String tempId = OptUtils.getTemp();
+
+        computation.append(tempId + "." + type + " " + ASSIGN + "." + type +
+                " new(" + type + ")." + type + END_STMT);
+
+        computation.append("invokespecial(" +
+                tempId + "." + type + ",\"<init>\").V" + END_STMT);
+
+        return new OllirExprResult(tempId+"."+type, computation);
     }
 
     /**
