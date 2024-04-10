@@ -30,7 +30,7 @@ public class Arrays extends AnalysisVisitor {
         if (!arrayType.isArray()) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, array, "Array access on non-array type"));
         }
-        if (!indexType.equals(TypeUtils.getIntType())) {
+        if (!TypeUtils.getIntType().equals(indexType)) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, index, "Array index must be of type int"));
         }
         return null;
