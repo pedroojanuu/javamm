@@ -96,7 +96,7 @@ public class TypeUtils {
      * @return Message for the error report if the method call is invalid, null otherwise
      */
     public static String isValidMethodCall(JmmNode methodCallExpr, SymbolTable table, String currentMethod, List<Report> reports) {
-        var defaultErrorMessage = "Unknown method call.";
+        var defaultErrorMessage = "Unknown method call";
         var invalidArgumentsMessage = "Invalid arguments for method call.";
 
         var object = methodCallExpr.getObject("object", JmmNode.class);
@@ -110,7 +110,7 @@ public class TypeUtils {
             if (!methodExists) {
                 var superName = objectType.getOptionalObject("super").orElse("");
                 if (superName.equals("")) {
-                    return defaultErrorMessage;
+                    return defaultErrorMessage + " '" + methodName + "' on class '" + table.getClassName() + "'";
                 }
                 return null;
             }

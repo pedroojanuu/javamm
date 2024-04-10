@@ -15,15 +15,19 @@ import pt.up.fe.specs.util.SpecsSystem;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public class Launcher {
     private static void testFile(String fileName) {
-        /*
-        File inputFile = new File(fileName);
+        var config = CompilerConfig.getDefault();
+        if (!CompilerConfig.putFile(config, fileName)) {
+            throw new RuntimeException("File name " + fileName + " is not a file");
+        }
+        var inputFile = CompilerConfig.getInputFile(config).orElseThrow();
         if (!inputFile.isFile()) {
-            throw new RuntimeException("Invalid file " + fileName);
+            throw new RuntimeException("File name " + fileName + " is not a file");
         }
         String code = SpecsIo.read(inputFile);
 
@@ -40,12 +44,40 @@ public class Launcher {
         JmmAnalysisImpl sema = new JmmAnalysisImpl();
         JmmSemanticsResult semanticsResult = sema.semanticAnalysis(parserResult);
         System.out.println(semanticsResult.getReports());
-        TestUtils.noErrors(semanticsResult.getReports());
+        try {
+            if (fileName.contains("error")) {
+                TestUtils.mustFail(semanticsResult.getReports());
+            } else {
+                TestUtils.noErrors(semanticsResult.getReports());
+            }
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.out.println("Error in file " + fileName);
+            throw e;
+        }
 
         // print the contents of the symbol table (e.g. imports, ...)
         var symbolTable = semanticsResult.getSymbolTable();
         System.out.println(symbolTable);
-         */
+
+        /*
+        // Optimization stage
+        JmmOptimizationImpl ollirGen = new JmmOptimizationImpl();
+        OllirResult ollirResult = ollirGen.toOllir(semanticsResult);
+        TestUtils.noErrors(ollirResult.getReports());
+
+        // Print OLLIR code
+        //System.out.println(ollirResult.getOllirCode());
+
+        // Code generation stage
+        JasminBackendImpl jasminGen = new JasminBackendImpl();
+        JasminResult jasminResult = jasminGen.toJasmin(ollirResult);
+        TestUtils.noErrors(jasminResult.getReports());
+
+        // Print Jasmin code
+        //System.out.println(jasminResult.getJasminCode());
+        */
     }
     public static void main(String[] args) {
         SpecsSystem.programStandardInit();
@@ -76,7 +108,12 @@ public class Launcher {
         // print the contents of the symbol table (e.g. imports, ...)
         var symbolTable = semanticsResult.getSymbolTable();
         System.out.println(symbolTable);
-    /*
+
+        List<String> files = Arrays.asList("bool_exprs.java", "different_expressions.java", "import_method.java", "error_imported_class_does_not_extend_mine.java", "input.java", "input2.java", "input3.java", "method_call_from_import.java", "simple.java", "error_my_class_does_not_extend_import.java", "error_this_wrong.java", "error_unknown_field.java", "varargs_array_argument.java", "error_varargs_method_var_decl.java", "error_varargs_return.java", "import_complex.java", "error_varargs_field.java");
+        for (String file : files) {
+            testFile("input/" + file);
+        }
+        /*
         // Optimization stage
         JmmOptimizationImpl ollirGen = new JmmOptimizationImpl();
         OllirResult ollirResult = ollirGen.toOllir(semanticsResult);
