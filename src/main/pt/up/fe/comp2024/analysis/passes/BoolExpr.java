@@ -26,9 +26,9 @@ public class BoolExpr extends AnalysisVisitor {
     }
     private Void visitBoolExprStmt(JmmNode node, SymbolTable table) {
         var condition = node.getObject("condition", JmmNode.class);
-        var conditionType = TypeUtils.getExprType(condition, table, currentMethod);
-
-        if (!conditionType.equals(TypeUtils.getBooleanType())) {
+        var conditionType = TypeUtils.getExprType(condition, table, currentMethod, this.getReports());
+        var booleanType = TypeUtils.getBooleanType();
+        if (!booleanType.equals(conditionType)) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, condition, "Condition must be of type boolean"));
         }
         return null;

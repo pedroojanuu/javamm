@@ -12,6 +12,9 @@ import pt.up.fe.comp2024.ast.NodeUtils;
 import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.comp2024.utils.ReportUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Methods extends AnalysisVisitor {
     private String currentMethod;
     @Override
@@ -26,7 +29,7 @@ public class Methods extends AnalysisVisitor {
     private Void visitNormalMethodDecl(JmmNode method, SymbolTable table) {
         setCurrentMethodName(method);
 
-        var returnType = TypeUtils.getExprType(method.getObject("returnExpr", JmmNode.class), table, method.get("name"));
+        var returnType = TypeUtils.getExprType(method.getObject("returnExpr", JmmNode.class), table, method.get("name"), this.getReports());
         var methodType = table.getReturnType(method.get("name"));
 
         if (!TypeUtils.areTypesAssignable(returnType, methodType, table)) {
@@ -50,8 +53,9 @@ public class Methods extends AnalysisVisitor {
         return null;
     }
     private Void visitMethodCall(JmmNode methodCall, SymbolTable table) {
-        String message = TypeUtils.isValidMethodCall(methodCall, table, currentMethod);
-        if (message != null) {
+        String message = TypeUtils.isValidMethodCall(methodCall, table, currentMethod, this.getReports());
+
+        if (message != null && this.getReports().isEmpty()) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, methodCall, message));
         }
 

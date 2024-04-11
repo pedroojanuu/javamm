@@ -4,6 +4,9 @@ class Factorial {
     int length;
     int String;
     String a;
+    int computeFactorial(int a) {
+        return a;
+    }
     public static void main(String[] args) {
         io.println(new Factorial().computeFactorial(10));
     }
