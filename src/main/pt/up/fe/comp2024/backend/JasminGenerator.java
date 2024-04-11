@@ -99,6 +99,7 @@ public class JasminGenerator {
         if (code == null) {
             createImportTable(ollirResult.getOllirCode());
             code = generators.apply(ollirResult.getOllirClass());
+            if(true) throw new RuntimeException(code);
         }
 
         return code;
@@ -119,6 +120,15 @@ public class JasminGenerator {
             code.append(".super ").append(superClassName).append(NL).append(NL);
         } else {
             code.append(".super java/lang/Object").append(NL).append(NL);
+        }
+
+        // generate code for all other methodst/up/fe/comp/cp2/jasmin/
+        for (var field : ollirResult.getOllirClass().getFields()) {
+            code.append(generators.apply(field));
+        }
+        code.append(NL);
+
+        if(classUnit.getSuperClass() == null) {
             // generate a single constructor method
             var defaultConstructor = """
                     ;default constructor
@@ -131,7 +141,6 @@ public class JasminGenerator {
             code.append(defaultConstructor);
         }
 
-        // generate code for all other methodst/up/fe/comp/cp2/jasmin/
         for (var method : ollirResult.getOllirClass().getMethods()) {
 
             // Ignore constructor, since there is always one constructor
