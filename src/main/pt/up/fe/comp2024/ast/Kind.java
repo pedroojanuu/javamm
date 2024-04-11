@@ -44,9 +44,7 @@ public enum Kind {
     ARRAY_INDEX_EXPR,
     MEMBER_ACCESS_EXPR,
     BOOLEAN_LITERAL_EXPR,
-    ARGLIST,
-    PAREN_EXPR,
-    NOT_EXPR
+    ARGLIST
     ;
 
     private static final Set<Kind> STATEMENTS = Set.of(ASSIGN_STMT, RETURN_STMT);

@@ -112,7 +112,7 @@ public class Launcher {
         for (String file : files) {
             testFile("input/" + file);
         }
-        /*
+
         // Optimization stage
         JmmOptimizationImpl ollirGen = new JmmOptimizationImpl();
         OllirResult ollirResult = ollirGen.toOllir(semanticsResult);

@@ -62,7 +62,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         computation.append(rhs.getComputation());
 
         // code to compute self
-        Type resType = TypeUtils.getExprType(node, table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow());
+        Type resType = TypeUtils.getExprType(node, table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null);
         String resOllirType = OptUtils.toOllirType(resType);
         String code = OptUtils.getTemp() + resOllirType;
 
@@ -70,7 +70,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 .append(ASSIGN).append(resOllirType).append(SPACE)
                 .append(lhs.getCode()).append(SPACE);
 
-        Type type = TypeUtils.getExprType(node, table, "", null);
+        Type type = TypeUtils.getExprType(node, table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null);
         computation.append(node.get("op")).append(OptUtils.toOllirType(type)).append(SPACE)
                 .append(rhs.getCode()).append(END_STMT);
 
@@ -82,7 +82,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
         var id = node.get("id");
         String methodName = node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow();
-        Type type = TypeUtils.getExprType(node, table, methodName);
+        Type type = TypeUtils.getExprType(node, table, methodName, null);
         String ollirType = "";
         if (type != null) ollirType = OptUtils.toOllirType(type);
 
@@ -139,7 +139,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 computation.append(argsResult.getLast().getCode());
             }
             computation.append(")" + type + END_STMT);
-        } else if (TypeUtils.getIdLiteralExprType(node.getJmmChild(0), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow()) != null) {
+        } else if (TypeUtils.getIdLiteralExprType(node.getJmmChild(0), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null) != null) {
             // field or local variable
             resultTemp = OptUtils.getTemp();
             computation.append(resultTemp);
