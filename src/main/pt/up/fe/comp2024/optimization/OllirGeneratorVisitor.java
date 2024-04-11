@@ -179,7 +179,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
                 var paramCode = visit(param);
                 code.append(paramCode + ", ");
             }
-            var lastParam = params.getLast();
+            var lastParam = params.get(params.size() - 1);
             code.append(visit(lastParam));
         }
         code.append(")");

@@ -11,6 +11,7 @@ import pt.up.fe.specs.util.utilities.StringLines;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 //Notas falta - extends, constructors, True and false, operators, objRef&Arrays
 //Imports em jasmin
@@ -37,6 +38,7 @@ public class JasminGenerator {
 
     Method currentMethod;
     ClassUnit currentClass;
+    HashMap<String, String> importTable;
 
     private final FunctionClassMap<TreeNode, String> generators;
 
@@ -67,12 +69,36 @@ public class JasminGenerator {
         return reports;
     }
 
+    // start of the import table, for each line in code, if it starts winth import, add it to the import table
+    // Exmple: "import org.Class1;" -> <"Class1","org/Class1">
+    public void createImportTable(String code){
+        importTable = new HashMap<>();
+        String[] lines = code.split("\n");
+        for (String line : lines) {
+            if (line.startsWith("import")) {
+                String[] parts = line.split(" ");
+                String[] parts2 = parts[1].split(";");
+                String[] parts3 = parts2[0].split("\\.");
+                String className = parts3[parts3.length-1];
+                String path = parts2[0].replace(".", "/");
+                importTable.put(className, path);
+            }
+        }
+    }
+
+    public String getImportedClass(String className) {
+        if(importTable.containsKey(className))
+            return importTable.get(className);
+        else
+            return className;
+    }
+
     public String build() {
 
         // This way, build is idempotent
         if (code == null) {
+            createImportTable(ollirResult.getOllirCode());
             code = generators.apply(ollirResult.getOllirClass());
-//            if(true) throw new RuntimeException(code);
         }
 
         return code;
@@ -88,20 +114,22 @@ public class JasminGenerator {
         code.append(".class ").append(className).append(NL).append(NL);
 
         // TODO: Hardcoded to Object, needs to be expanded
-//        String superClass = classUnit.getSuperClass() == null ? "java/lang/Object" : classUnit.getSuperClass();
-        String superClass = "java/lang/Object";
-        code.append(".super ").append(superClass).append(NL).append(NL);
-
-        // generate a single constructor method
-        var defaultConstructor = """
-                ;default constructor
-                .method public <init>()V
-                    aload_0
-                    invokespecial java/lang/Object/<init>()V
-                    return
-                .end method
-                """;
-        code.append(defaultConstructor);
+        if(classUnit.getSuperClass() != null) {
+            String superClassName = getImportedClass(classUnit.getSuperClass());
+            code.append(".super ").append(superClassName).append(NL).append(NL);
+        } else {
+            code.append(".super java/lang/Object").append(NL).append(NL);
+            // generate a single constructor method
+            var defaultConstructor = """
+                    ;default constructor
+                    .method public <init>()V
+                        aload_0
+                        invokespecial java/lang/Object/<init>()V
+                        return
+                    .end method
+                    """;
+            code.append(defaultConstructor);
+        }
 
         // generate code for all other methodst/up/fe/comp/cp2/jasmin/
         for (var method : ollirResult.getOllirClass().getMethods()) {
@@ -132,7 +160,7 @@ public class JasminGenerator {
             return "Ljava/lang/String;";
         } else if (type.getTypeOfElement() == ElementType.OBJECTREF) {
             ClassType castType = (ClassType) type;
-            return "L" + castType.getName() + ";";
+            return "L" + getImportedClass(castType.getName()) + ";";
         } else if (type.getTypeOfElement() == ElementType.CLASS) {
             return "Ljava/lang/Class;";
         } else if(type.getTypeOfElement() == ElementType.ARRAYREF) {
@@ -312,13 +340,12 @@ public class JasminGenerator {
 
         if (call.getInvocationType() == CallType.NEW) {
             ClassType castType = (ClassType) call.getReturnType();
-            return "new " + castType.getName() + NL +
+            return "new " + getImportedClass(castType.getName()) + NL +
                     "dup" + NL;
         }
 
         // Append code to load caller object
-        if(call.getInvocationType() == CallType.invokevirtual ||
-           call.getInvocationType() == CallType.invokespecial)
+        if(call.getInvocationType() != CallType.invokestatic)
             code.append(generators.apply(call.getCaller()));
 
         String argList = "";
@@ -340,12 +367,16 @@ public class JasminGenerator {
         if(callMethodName.getType().getTypeOfElement() != ElementType.STRING)
             throw new RuntimeException("Call Method Name must be a STRING");
 
-        ClassType callerType = (ClassType) call.getCaller().getType();
+        String className;
+        if(call.getInvocationType() == CallType.invokestatic)
+            className = getImportedClass(((Operand) call.getCaller().toElement()).getName());
+        else
+            className = getImportedClass(((ClassType) call.getCaller().getType()).getName());
 
         // generate code for calling method
         code.append(call.getInvocationType())
                 .append(" ")
-                .append(callerType.getName())
+                .append(className)
                 .append("/")
                 .append(callMethodName.getLiteral().substring(1, callMethodName.getLiteral().length() - 1))
                 .append("(" + argList + ")")

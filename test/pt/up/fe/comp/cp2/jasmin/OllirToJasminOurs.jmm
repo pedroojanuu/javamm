@@ -1,10 +1,12 @@
 import io;
 import Quicksort;
+import java.util.List;
 
 class SymbolTable extends Quicksort {
 
 	int intField;
 	boolean boolField;
+	List listField;
 
 	public int method1() {
 	    int intLocal1;
@@ -12,6 +14,7 @@ class SymbolTable extends Quicksort {
 
 		intLocal1 = 0 + 10 - 1 * 5 / (3+9);
 		boolLocal1 = true;
+		listField = new List();
 
 		return 0;
 	}
@@ -25,7 +28,7 @@ class SymbolTable extends Quicksort {
 
 	public int recursiveMethod(int n) {
 	    Test test = new Test();
-	    return recursiveMethod(test.foo());
+	    return recursiveMethod(test.foo() + Test.staticFoo());
     }
 
 	public static void main(String[] args) {

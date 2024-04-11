@@ -136,7 +136,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 computation.append(", ");
                 for (int i = 0; i < argsResult.size() - 1; i++)
                     computation.append(argsResult.get(i).getCode() + ", ");
-                computation.append(argsResult.getLast().getCode());
+                computation.append(argsResult.get(argsResult.size() - 1).getCode());
             }
             computation.append(")" + type + END_STMT);
         } else if (TypeUtils.getIdLiteralExprType(node.getJmmChild(0), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null) != null) {
@@ -149,7 +149,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 computation.append(", ");
                 for (int i = 0; i < argsResult.size() - 1; i++)
                     computation.append(argsResult.get(i).getCode() + ", ");
-                computation.append(argsResult.getLast().getCode());
+                computation.append(argsResult.get(argsResult.size() - 1).getCode());
             }
             computation.append(")" + type + END_STMT);
         } else {
@@ -159,7 +159,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 code.append(", ");
                 for (int i = 0; i < argsResult.size() - 1; i++)
                     code.append(argsResult.get(i).getCode() + ", ");
-                code.append(argsResult.getLast().getCode());
+                code.append(argsResult.get(argsResult.size() - 1).getCode());
             }
             code.append(")");
         }
