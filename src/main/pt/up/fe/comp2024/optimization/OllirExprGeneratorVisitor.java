@@ -134,12 +134,13 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             computation.append("invokevirtual(this, \"" + methodName + "\"");
             if (!argsResult.isEmpty()) {
                 computation.append(", ");
-                for (int i = 0; i < argsResult.size() - 1; i++)
+                int i;
+                for (i = 0; i < argsResult.size() - 1; i++)
                     computation.append(argsResult.get(i).getCode() + ", ");
-                computation.append(argsResult.getLast().getCode());
+                computation.append(argsResult.get(i).getCode());
             }
             computation.append(")" + type + END_STMT);
-        } else if (TypeUtils.getIdLiteralExprType(node.getJmmChild(0), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null) != null) {
+        } else if (TypeUtils.getExprType(node.getJmmChild(0), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null) != null) {
             // field or local variable
             resultTemp = OptUtils.getTemp();
             computation.append(resultTemp);
@@ -147,9 +148,10 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             computation.append("invokevirtual(" + objectName + ", \"" + methodName + "\"");
             if (!argsResult.isEmpty()) {
                 computation.append(", ");
-                for (int i = 0; i < argsResult.size() - 1; i++)
+                int i;
+                for (i = 0; i < argsResult.size() - 1; i++)
                     computation.append(argsResult.get(i).getCode() + ", ");
-                computation.append(argsResult.getLast().getCode());
+                computation.append(argsResult.get(i).getCode());
             }
             computation.append(")" + type + END_STMT);
         } else {
@@ -157,9 +159,10 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             code.append("invokestatic(" + objectName + ", \"" + methodName + "\"");
             if (!argsResult.isEmpty()) {
                 code.append(", ");
-                for (int i = 0; i < argsResult.size() - 1; i++)
+                int i;
+                for (i = 0; i < argsResult.size() - 1; i++)
                     code.append(argsResult.get(i).getCode() + ", ");
-                code.append(argsResult.getLast().getCode());
+                code.append(argsResult.get(i).getCode());
             }
             code.append(")");
         }
