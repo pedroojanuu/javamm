@@ -69,7 +69,7 @@ public class JasminGenerator {
         return reports;
     }
 
-    // start of the import table, for each line in code, if it starts winth import, add it to the import table
+    // start of the import table, for each line in code, if it starts with import, add it to the import table
     // Exmple: "import org.Class1;" -> <"Class1","org/Class1">
     public void createImportTable(String code){
         importTable = new HashMap<>();
