@@ -225,8 +225,8 @@ public class JasminGenerator {
                     .collect(Collectors.joining(NL + TAB, TAB, NL));
 
             code.append(instCode);
-            for(int i = 0; i < stackSize; i++)
-                code.append("pop").append(NL);
+//            for(int i = 0; i < stackSize; i++)
+//                code.append("pop").append(NL);
             stackSize = 0;
         }
 
@@ -336,7 +336,6 @@ public class JasminGenerator {
     }
 
     private String generateReturn(ReturnInstruction returnInst) {
-        stackSize--;
         var code = new StringBuilder();
 
         if(returnInst.getOperand() == null)
@@ -345,9 +344,11 @@ public class JasminGenerator {
                 returnInst.getOperand().getType().getTypeOfElement() == ElementType.BOOLEAN) {
             code.append(generators.apply(returnInst.getOperand()));
             code.append("ireturn").append(NL);
+            stackSize--;
         } else {
             code.append(generators.apply(returnInst.getOperand()));
             code.append("areturn").append(NL);
+            stackSize--;
         }
 
         return code.toString();
