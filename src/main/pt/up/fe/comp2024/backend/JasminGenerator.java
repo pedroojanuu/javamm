@@ -99,7 +99,6 @@ public class JasminGenerator {
         if (code == null) {
             createImportTable(ollirResult.getOllirCode());
             code = generators.apply(ollirResult.getOllirClass());
-            if(true) throw new RuntimeException(code);
         }
 
         return code;
