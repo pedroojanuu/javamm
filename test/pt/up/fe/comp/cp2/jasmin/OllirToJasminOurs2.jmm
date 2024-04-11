@@ -1,5 +1,0 @@
-class MyClass {
-    int counter;
-    boolean isActive;
-    String message;
-}

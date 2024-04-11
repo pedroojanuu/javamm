@@ -35,6 +35,7 @@ public class JasminGenerator {
     List<Report> reports;
 
     String code;
+    int stackSize = 0;
 
     Method currentMethod;
     ClassUnit currentClass;
@@ -99,6 +100,7 @@ public class JasminGenerator {
         if (code == null) {
             createImportTable(ollirResult.getOllirCode());
             code = generators.apply(ollirResult.getOllirClass());
+//            if(true) throw new RuntimeException(code);
         }
 
         return code;
@@ -223,6 +225,9 @@ public class JasminGenerator {
                     .collect(Collectors.joining(NL + TAB, TAB, NL));
 
             code.append(instCode);
+            for(int i = 0; i < stackSize; i++)
+                code.append("pop").append(NL);
+            stackSize = 0;
         }
 
         code.append(".end method\n");
@@ -234,6 +239,7 @@ public class JasminGenerator {
     }
 
     private String generateAssign(AssignInstruction assign) {
+        stackSize--;
         if(currentMethod == null)
             throw new RuntimeException("Method not set");
         var code = new StringBuilder();
@@ -267,11 +273,13 @@ public class JasminGenerator {
     }
 
     private String generateLiteral(LiteralElement literal) {
+        stackSize++;
         return "ldc " + literal.getLiteral() + NL;
     }
 
     private String generateOperand(Operand operand) {
         // get register
+        stackSize++;
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
         if(operand.getType().getTypeOfElement() == ElementType.INT32 ||
                 operand.getType().getTypeOfElement() == ElementType.BOOLEAN)
@@ -281,6 +289,7 @@ public class JasminGenerator {
     }
 
     private String generateBinaryOp(BinaryOpInstruction binaryOp) {
+        stackSize--;
         var code = new StringBuilder();
 
         // load values on the left and on the right
@@ -327,6 +336,7 @@ public class JasminGenerator {
     }
 
     private String generateReturn(ReturnInstruction returnInst) {
+        stackSize--;
         var code = new StringBuilder();
 
         if(returnInst.getOperand() == null)
@@ -344,6 +354,7 @@ public class JasminGenerator {
     }
 
     private String generateCall(CallInstruction call) {
+        stackSize++;
         var code = new StringBuilder();
 
         if (call.getInvocationType() == CallType.NEW) {
@@ -353,8 +364,10 @@ public class JasminGenerator {
         }
 
         // Append code to load caller object
-        if(call.getInvocationType() != CallType.invokestatic)
+        if(call.getInvocationType() != CallType.invokestatic) {
             code.append(generators.apply(call.getCaller()));
+            stackSize--;
+        }
 
         String argList = "";
 
@@ -362,12 +375,13 @@ public class JasminGenerator {
         for (var arg : call.getArguments()) {
             code.append(generators.apply(arg));
             argList += transformToJasminType((arg.getType()));
+            stackSize--;
         }
 
         if(call.getMethodNameTry().isEmpty())
             throw new RuntimeException("Call Method doesn't exist");
 
-        String callType = transformToJasminType(call.getReturnType());
+        String returnType = transformToJasminType(call.getReturnType());
 
         if(!call.getMethodName().isLiteral())
             throw new RuntimeException("Call Method Name is not a literal");
@@ -388,7 +402,7 @@ public class JasminGenerator {
                 .append("/")
                 .append(callMethodName.getLiteral().substring(1, callMethodName.getLiteral().length() - 1))
                 .append("(" + argList + ")")
-                .append(callType)
+                .append(returnType)
                 .append(NL);
 
         return code.toString();
@@ -403,6 +417,7 @@ public class JasminGenerator {
     }
 
     private String generatePutField(PutFieldInstruction putField) {
+        stackSize -= 2;
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
@@ -411,8 +426,6 @@ public class JasminGenerator {
 
         // store value in the stack in destination
         var field = putField.getField();
-
-        generators.apply(putField.getValue());
 
         code.append("putfield ")
                 .append(currentClass.getClassName())
@@ -425,10 +438,12 @@ public class JasminGenerator {
     }
 
     private String generateGetField(GetFieldInstruction getFieldInstruction) {
+        stackSize++;
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
         code.append(generators.apply(getFieldInstruction.getObject()));
+        stackSize--;
 
         // store value in the stack in destination
         var field = getFieldInstruction.getField();
