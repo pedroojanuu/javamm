@@ -48,8 +48,8 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(VAR_DECL, this::visitVarDecl);
         addVisit(TYPE, this::visitType);
         addVisit(PARAM, this::visitParam);
-        addVisit(MAIN_METHOD, this::visitMethodDecl);
-        addVisit(OTHER_METHOD, this::visitMethodDecl);
+        addVisit(MAIN_METHOD, this::visitMainMethodDecl);
+        addVisit(OTHER_METHOD, this::visitOtherMethodDecl);
         //addVisit(INT_ARRAY, this::visitIntArray);
         //addVisit(VAR_ARGS, this::visitVarArgs);
         //addVisit(IF_STMT, this::visitIfStmt);
@@ -156,7 +156,37 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         return code.toString();
     }
 
-    private String visitMethodDecl(JmmNode node, Void unused) {
+    private String visitMainMethodDecl(JmmNode node, Void unused) {
+
+        StringBuilder code = new StringBuilder(".method ");
+
+        code.append ("public static main");
+
+        // param
+        code.append("(");
+        code.append(node.get("parameterName") + ".array");
+        code.append(OptUtils.toOllirType(TypeUtils.getMyClassType(node.get("paramType"), "")));
+        code.append(")");
+
+        code.append(".V");
+
+        code.append(L_BRACKET);
+
+        // children stmts
+        for (int i = 0; i < node.getNumChildren(); i++)
+            code.append(visit(node.getJmmChild(i)));
+
+        code.append(RET + ".V" + END_STMT);
+
+        code.append(R_BRACKET);
+        code.append(NL);
+
+        varDeclTemp.clear();
+
+        return code.toString();
+    }
+
+    private String visitOtherMethodDecl(JmmNode node, Void unused) {
 
         StringBuilder code = new StringBuilder(".method ");
 
