@@ -225,8 +225,8 @@ public class JasminGenerator {
                     .collect(Collectors.joining(NL + TAB, TAB, NL));
 
             code.append(instCode);
-//            for(int i = 0; i < stackSize; i++)
-//                code.append("pop").append(NL);
+            for(int i = 0; i < stackSize; i++)
+                code.append("pop").append(NL);
             stackSize = 0;
         }
 
@@ -405,6 +405,9 @@ public class JasminGenerator {
                 .append("(" + argList + ")")
                 .append(returnType)
                 .append(NL);
+
+        if (returnType.equals("V"))
+            stackSize--;
 
         return code.toString();
     }
