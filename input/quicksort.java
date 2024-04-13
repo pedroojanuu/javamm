@@ -11,7 +11,6 @@ class QuickSort {
         QuickSort qs;
 
         ap = new ArrayParser();
-        bs = new BubbleSort();
 
         arr = ap.parse(input);
         sorted = qs.quickSort(arr);

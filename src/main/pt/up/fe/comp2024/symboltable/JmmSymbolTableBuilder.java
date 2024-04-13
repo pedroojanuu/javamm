@@ -39,8 +39,6 @@ public class JmmSymbolTableBuilder {
                 .map(importDecl -> importDecl.getObjectAsList("id", String.class))
                 .toList();
         List<String> imports = importsList.stream().map(importDeclList -> String.join(".", importDeclList)).toList();
-        //var imports = root.getChildren(Kind.IMPORT_DECL).stream()
-        //        .map(importDecl -> String.join(".", importDecl.getObjectAsList("id", String.class))).toList();
 
         Set<String> importsSet = new HashSet<>(imports);   // checking for duplicate imports
         if (importsSet.size() < imports.size()) {
@@ -140,9 +138,17 @@ public class JmmSymbolTableBuilder {
         return map;
     }
     private static List<String> buildMethods(JmmNode classDecl, List<Report> reports) {
-        List<String> mainMethod = classDecl.getChildren(Kind.MAIN_METHOD).stream()
+        TypeUtils.setMainIsStatic(false);
+
+        List<JmmNode> mainMethodNodes = classDecl.getChildren(Kind.MAIN_METHOD);
+        List<String> mainMethod = mainMethodNodes.stream()
                 .map(method -> "main")
                 .toList();
+        if (!mainMethodNodes.isEmpty()) {
+            JmmNode mainMethodNode = mainMethodNodes.get(0);
+            TypeUtils.setMainIsStatic(mainMethodNode.getObject("isStatic", Boolean.class));
+        }
+
         List<String> methods = classDecl.getChildren(Kind.OTHER_METHOD).stream()
                 .map(method -> method.get("name"))
                 .toList();

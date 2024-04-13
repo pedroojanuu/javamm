@@ -12,7 +12,7 @@ import pt.up.fe.comp2024.utils.ReportUtils;
 import java.util.List;
 
 public class TypeUtils {
-
+    private static boolean mainIsStatic = false;
     private static final String INT_TYPE_NAME = "int";
     private static final String BOOLEAN_TYPE_NAME = "boolean";
     private static final String VOID_TYPE_NAME = "void";
@@ -52,6 +52,9 @@ public class TypeUtils {
     }
     public static String getStringTypeName() {
         return STRING_TYPE_NAME;
+    }
+    public static void setMainIsStatic(boolean isStatic) {
+        mainIsStatic = isStatic;
     }
     /**
      * Gets the {@link Type} of an arbitrary expression.
@@ -174,7 +177,10 @@ public class TypeUtils {
                     .orElse(null);
 
             if (method == null && reports != null) {
-                reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, methodCallExpr, "Unknown method '" + methodName + " for class '" + table.getClassName()));
+                var superName = objectType.getOptionalObject("super").orElse("");
+                if (superName.equals("")) {
+                    reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, methodCallExpr, "Unknown method '" + methodName + "' for class '" + table.getClassName() + "'"));
+                }
             }
 
             return table.getReturnType(method);
@@ -253,6 +259,7 @@ public class TypeUtils {
     }
 
     public static Type getIdType(String id, JmmNode node, SymbolTable table, String currentMethod, List<Report> reports) {
+        System.out.println("getIdType: " + id + " " + currentMethod + " " + table.getClassName() + " " + table.getFields());
         if (SymbolTableUtils.isLocal(id, currentMethod, table)) {
             return SymbolTableUtils.getLocal(id, currentMethod, table).getType();
         }
@@ -260,15 +267,14 @@ public class TypeUtils {
         if (SymbolTableUtils.isParam(id, currentMethod, table)) {
             return SymbolTableUtils.getParam(id, currentMethod, table).getType();
         }
-
-        if (SymbolTableUtils.isField(id, table)) {
+        if (SymbolTableUtils.isField(id, table) && !(currentMethod.equals("main") && mainIsStatic)) {
             return SymbolTableUtils.getField(id, table).getType();
         }
 
         if (SymbolTableUtils.hasImport(table, id)) {
             return null;
         }
-        ReportUtils.buildErrorReport(Stage.SEMANTIC, node, "Unknown variable '" + id + "'");
+        reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, node, "Unknown variable '" + id + "'"));
         return null;
     }
     public static Type getIdLiteralExprType(JmmNode idLiteralExpr, SymbolTable table, String currentMethod, List<Report> reports) {
@@ -283,6 +289,8 @@ public class TypeUtils {
      * @return true if sourceType can be assigned to destinationType
      */
     public static boolean areTypesAssignable(Type sourceType, Type destinationType, SymbolTable table) {
+        System.out.println(sourceType);
+        System.out.println(destinationType);
         if (sourceType == null || destinationType == null ||
                 sourceType.equals(destinationType) || typeInherits(sourceType, destinationType)) {
             return true;
