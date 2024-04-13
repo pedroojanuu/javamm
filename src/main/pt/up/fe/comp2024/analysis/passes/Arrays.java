@@ -69,8 +69,15 @@ public class Arrays extends AnalysisVisitor {
         String member = method.get("member");
         var leftExprType = TypeUtils.getExprType(leftExpr, table, currentMethod, this.getReports());
 
-        if (member.equals("length") && !leftExprType.isArray()) {
-            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, leftExpr, "Access length on non-array type"));
+        if (member.equals("length")) {
+            if (leftExprType != null && !leftExprType.isArray()) {
+                addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, leftExpr, "Access length on non-array type"));
+            }
+            return null;
+        }
+        if (!table.getMethods().contains(member)) {
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, method, "Accessing field or invalid member"));
+            return null;
         }
         return null;
     }

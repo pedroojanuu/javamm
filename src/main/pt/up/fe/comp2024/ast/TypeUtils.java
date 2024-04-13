@@ -88,7 +88,6 @@ public class TypeUtils {
         JmmNode index = arrayIndexExpr.getObject("index", JmmNode.class);
         Type indexType = getExprType(index, table, currentMethod, reports);
 
-        System.out.println("HELLO");
         if ((arrayType == null || getIntArrayType().equals(arrayType)) && (indexType == null || getIntType().equals(indexType))) {
             return getIntType();
         }
@@ -100,12 +99,9 @@ public class TypeUtils {
     public static Type getNotExprType(JmmNode expr, SymbolTable table, String currentMethod, List<Report> reports) {
         var innerExpr = expr.getChild(0);
         var innerType = getExprType(innerExpr, table, currentMethod, reports);
-        System.out.println("GET NOT EXPR TYPE");
         if (reports != null && reports.isEmpty() && innerType != null && !getBooleanType().equals(innerType)) {
-            System.out.println("Adding report");
             reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, expr, "Invalid type for operator '!'"));
         }
-        System.out.println("GET NOT EXPR TYPE");
         return getBooleanType();
     }
     public static Type getParenthesisExprType(JmmNode expr, SymbolTable table, String currentMethod, List<Report> reports) {
@@ -206,7 +202,6 @@ public class TypeUtils {
             return table.getReturnType(method);
         }
 
-        System.out.println(objectType);
         // assume that methods from imports are valid
         if (SymbolTableUtils.hasImport(table, getName(objectType)) || objectType == null) {
             return null;
@@ -308,8 +303,6 @@ public class TypeUtils {
      * @return true if sourceType can be assigned to destinationType
      */
     public static boolean areTypesAssignable(Type sourceType, Type destinationType, SymbolTable table) {
-        System.out.println(sourceType);
-        System.out.println(destinationType);
         if (sourceType == null || destinationType == null ||
                 sourceType.equals(destinationType) || typeInherits(sourceType, destinationType)) {
             return true;
