@@ -101,7 +101,12 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
     private OllirExprResult visitMethodCallExpr(JmmNode node, Void unused) {
 
-        String objectName = visit(node.getJmmChild(0)).getCode();
+        StringBuilder computation = new StringBuilder();
+        StringBuilder code = new StringBuilder();
+
+        OllirExprResult objectVisit = visit(node.getJmmChild(0));
+        computation.append(objectVisit.getComputation());
+        String objectName = objectVisit.getCode();
         String methodName = node.get("method");
         String type = "";
         try {
@@ -117,10 +122,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             for (JmmNode arg : args)
                 argsResult.add(visit(arg));
         }
-
-        StringBuilder computation = new StringBuilder();
-
-        StringBuilder code = new StringBuilder();
 
         for (OllirExprResult argResult : argsResult)
             computation.append(argResult.getComputation());

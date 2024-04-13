@@ -47,6 +47,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(CLASS_DECL, this::visitClassDecl);
         addVisit(VAR_DECL, this::visitVarDecl);
         addVisit(TYPE, this::visitType);
+        addVisit(OTHER_CLASSES, this::visitOtherClasses);
         addVisit(PARAM, this::visitParam);
         addVisit(MAIN_METHOD, this::visitMainMethodDecl);
         addVisit(OTHER_METHOD, this::visitOtherMethodDecl);
@@ -156,6 +157,10 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         return code.toString();
     }
 
+    private String visitOtherClasses(JmmNode node, Void unused) {
+        return "." + node.get("name");
+    }
+
     private String visitMainMethodDecl(JmmNode node, Void unused) {
 
         StringBuilder code = new StringBuilder(".method ");
@@ -218,8 +223,10 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         // type
         boolean isVoid = Objects.equals(node.get("methodType"), "void");
         if (!isVoid) {
-            var retType = visit(node.getChild(0));
+            var retType = visit(node.getJmmChild(0));
+            System.out.println(node.getJmmChild(0));
             code.append(retType);
+            System.out.println(retType);
         } else code.append(OptUtils.toOllirType(TypeUtils.getVoidType()));
 
         code.append(L_BRACKET);
