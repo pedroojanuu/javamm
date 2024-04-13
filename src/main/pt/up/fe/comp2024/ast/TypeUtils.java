@@ -180,6 +180,7 @@ public class TypeUtils {
     private static String getName(Type type) {
         return type == null ? null : type.getName();
     }
+
     public static Type getMethodCallExprType(JmmNode methodCallExpr, SymbolTable table, String currentMethod, List<Report> reports) {
         var methodName = methodCallExpr.get("method");
         var object = methodCallExpr.getObject("object", JmmNode.class);

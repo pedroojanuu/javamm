@@ -108,12 +108,21 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         computation.append(objectVisit.getComputation());
         String objectName = objectVisit.getCode();
         String methodName = node.get("method");
+
+        String invoke = "";
         String type = "";
-        try {
-            type = OptUtils.toOllirType(table.getReturnType(methodName));
-        } catch (Exception e) {
-            type = ".V";
-        }
+
+        if (table.getImports().contains(objectName))
+            // since the "object" is a mere imported class, the method has to be static
+            invoke = "invokestatic";
+        else invoke = "invokevirtual";
+
+        var assignAncestor = node.getAncestor(ASSIGN_STMT);
+        if (assignAncestor.isPresent())
+            // type will be that of the lhs of the expression
+            type = OptUtils.toOllirType(TypeUtils.getIdType(assignAncestor.get().get("id"), node.getParent(), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null));
+        else type = ".V";
+
 
         List<OllirExprResult> argsResult = new ArrayList<>();
 
@@ -126,9 +135,29 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         for (OllirExprResult argResult : argsResult)
             computation.append(argResult.getComputation());
 
-        String resultTemp = "";
+        StringBuilder invocation = new StringBuilder();
+        invocation.append(invoke + "(" + objectName + ", \"" + methodName + "\"");
 
-        if (objectName.equals("this")) {
+        if (!argsResult.isEmpty()) {
+            invocation.append(", ");
+            int i;
+            for (i = 0; i < argsResult.size() - 1; i++)
+                invocation.append(argsResult.get(i).getCode() + ", ");
+            invocation.append(argsResult.get(i).getCode());
+        }
+
+        invocation.append(")" + type);
+
+        if (type.equals(".V")) code.append(invocation);
+        else {
+            String resultTemp = OptUtils.getTemp();
+            computation.append(resultTemp);
+            computation.append(type + " " + ASSIGN + type + " ");
+            computation.append(invocation + END_STMT);
+            code.append(resultTemp + type);
+        }
+
+        /*if (objectName.equals("this")) {
             resultTemp = OptUtils.getTemp();
             computation.append(resultTemp);
             computation.append(type + " " + ASSIGN + type + " ");
@@ -141,8 +170,8 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 computation.append(argsResult.get(i).getCode());
             }
             computation.append(")" + type + END_STMT);
-        } else if (TypeUtils.getExprType(node.getJmmChild(0), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null) != null) {
-            // field or local variable
+        } else if (type.equals("") || TypeUtils.getExprType(node.getJmmChild(0), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null) != null) {
+            // field or local variable || method from import that has a result to be assigned
             resultTemp = OptUtils.getTemp();
             computation.append(resultTemp);
             computation.append(type + " " + ASSIGN + type + " ");
@@ -156,7 +185,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             }
             computation.append(")" + type + END_STMT);
         } else {
-            // import
+            // void method from import
             code.append("invokestatic(" + objectName + ", \"" + methodName + "\"");
             if (!argsResult.isEmpty()) {
                 code.append(", ");
@@ -169,6 +198,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         }
 
         code.append(resultTemp + type);
+        */
 
         return new OllirExprResult(code.toString(), computation);
     }

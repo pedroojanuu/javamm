@@ -1,27 +1,27 @@
-//import A;
-//import io;
+import A;
 
 class HelloWorld {
-//    public static void main(String[] args){
-//        io.println(new A().compFac(10));
-//    }
 
-    public A a() {
-        A a;
-        a = new A();
+    public boolean x() {
+        A b;
+        A c;
+        int i;
+        int j;
+        boolean a;
+
+        A.print(10);
+        b = new A();
+        b.foo();
+        c = A.n();
+        i = A.sum(10);
+        j = 5 + this.y();
+        a = false;
+
         return a;
     }
 
-    public boolean x() {
-        return true;
+    public int y() {
+        return 1;
     }
-
-//    public int x() {
-//        A a;
-//        a = this.a();
-//
-//        a.get();
-//
-//        return 0;
-//    }
 }
+

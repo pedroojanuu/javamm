@@ -224,9 +224,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         boolean isVoid = Objects.equals(node.get("methodType"), "void");
         if (!isVoid) {
             var retType = visit(node.getJmmChild(0));
-            System.out.println(node.getJmmChild(0));
             code.append(retType);
-            System.out.println(retType);
         } else code.append(OptUtils.toOllirType(TypeUtils.getVoidType()));
 
         code.append(L_BRACKET);
@@ -289,8 +287,13 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         // code to compute self
         // statement has type of lhs
-        Type thisType = TypeUtils.getExprType(node.getJmmChild(0), table, methodName, null);
-        String typeString = OptUtils.toOllirType(thisType);
+        Type rhsType = TypeUtils.getExprType(node.getJmmChild(0), table, methodName, null);
+
+        String typeString;
+
+        if (rhsType == null)
+            typeString = ollirType;
+        else typeString = OptUtils.toOllirType(rhsType);
 
         code.append(id + ollirType);
         code.append(SPACE);
@@ -304,20 +307,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(END_STMT);
 
         return code.toString();
-
-        /*code.append(lhsCode);
-        code.append(SPACE + ASSIGN);
-
-        // code to compute self
-        // statement has type of lhs
-        String typeString = OptUtils.toOllirType(lhs.getChild(0));
-        code.append(typeString + SPACE);
-
-        code.append(exprVisitor.visit(node.getJmmChild(0)).getCode());
-
-        code.append(END_STMT);
-
-        return code.toString();*/
     }
 
     private String visitReturnStmt(JmmNode node, Void unused) {
