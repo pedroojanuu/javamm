@@ -101,9 +101,9 @@ public class Launcher {
         var symbolTable = semanticsResult.getSymbolTable();
         System.out.println(symbolTable);
 
-        boolean testAll = false;
+        boolean testAll = true;
         if (testAll) {
-            List<String> files = Arrays.asList("bool_exprs.java", "different_expressions.java", "import_method.java", "error_imported_class_does_not_extend_mine.java", "input.java", "input2.java", "input3.java", "method_call_from_import.java", "simple.java", "error_my_class_does_not_extend_import.java", "error_this_wrong.java", "error_unknown_field.java", "varargs_array_argument.java", "error_varargs_method_var_decl.java", "error_varargs_return.java", "import_complex.java", "error_varargs_field.java", "varargs_complex.java", "dijkstra.java", "merge_sort.java", "binary_search.java", "bubble_sort.java", "quicksort.java", "error_duplicated_fields.java", "error_duplicated_methods.java", "error_duplicated_imports.java", "error_duplicated_imported_classes.java", "inherited_method.java", "main_not_static.java", "error_field_in_static.java");
+            List<String> files = Arrays.asList("bool_exprs.java", "different_expressions.java", "import_method.java", "error_imported_class_does_not_extend_mine.java", "input.java", "input2.java", "input3.java", "method_call_from_import.java", "simple.java", "error_my_class_does_not_extend_import.java", "error_this_wrong.java", "error_unknown_field.java", "varargs_array_argument.java", "error_varargs_method_var_decl.java", "error_varargs_return.java", "import_complex.java", "error_varargs_field.java", "varargs_complex.java", "dijkstra.java", "merge_sort.java", "binary_search.java", "bubble_sort.java", "quicksort.java", "error_duplicated_fields.java", "error_duplicated_methods.java", "error_duplicated_imports.java", "error_duplicated_imported_classes.java", "inherited_method.java", "main_not_static.java", "error_field_in_static.java", "error_assignment_array.java", "error_if_array_index.java");
             for (String file : files) {
                 testFile("input/" + file);
             }

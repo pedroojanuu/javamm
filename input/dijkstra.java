@@ -19,8 +19,8 @@ class Dijkstra {
         pq.add(u, 0);
         while (!pq.isEmpty()) {
             v = pq.poll();
-            if (!visited[v]) {
-                visited[v] = true;
+            if (!(visited[v] < 0) && !(0 < visited[v])) {  // TODO: this should send an error since visited is an array of ints
+                visited[v] = 1;
                 while (i < lenghts[adj[v]]) {
                     to = adj[v];
                     weight = weights[v];

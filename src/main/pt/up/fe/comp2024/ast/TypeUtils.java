@@ -68,7 +68,8 @@ public class TypeUtils {
         return switch (kind) {
             case BINARY_EXPR -> getBinExprType(expr, table, currentMethod, reports);
             case ID_LITERAL_EXPR -> getIdLiteralExprType(expr, table, currentMethod, reports);
-            case INT_LITERAL_EXPR, ARRAY_INDEX_EXPR -> getIntType();
+            case INT_LITERAL_EXPR -> getIntType();
+            case ARRAY_INDEX_EXPR -> getArrayIndexType(expr, table, currentMethod, reports);
             case MEMBER_ACCESS_EXPR -> getMemberAccessExprType(expr, table, currentMethod, reports);
             case THIS_EXPR -> getMyClassType(table.getClassName(), table.getSuper());
             case NEW_OBJ_EXPR -> getNewObjExprType(expr, table);
@@ -80,12 +81,31 @@ public class TypeUtils {
             default -> throw new UnsupportedOperationException("Can't compute type for expression kind '" + kind + "'");
         };
     }
+    public static Type getArrayIndexType(JmmNode arrayIndexExpr, SymbolTable table, String currentMethod, List<Report> reports) {
+        JmmNode array = arrayIndexExpr.getObject("name", JmmNode.class);
+        Type arrayType = getExprType(array, table, currentMethod, reports);
+
+        JmmNode index = arrayIndexExpr.getObject("index", JmmNode.class);
+        Type indexType = getExprType(index, table, currentMethod, reports);
+
+        System.out.println("HELLO");
+        if ((arrayType == null || getIntArrayType().equals(arrayType)) && (indexType == null || getIntType().equals(indexType))) {
+            return getIntType();
+        }
+        if (reports != null) {
+            reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, arrayIndexExpr, "Invalid types for array index"));
+        }
+        return null;
+    }
     public static Type getNotExprType(JmmNode expr, SymbolTable table, String currentMethod, List<Report> reports) {
         var innerExpr = expr.getChild(0);
         var innerType = getExprType(innerExpr, table, currentMethod, reports);
-        if (reports != null && !reports.isEmpty() && innerType != null && !getBooleanType().equals(innerType)) {
+        System.out.println("GET NOT EXPR TYPE");
+        if (reports != null && reports.isEmpty() && innerType != null && !getBooleanType().equals(innerType)) {
+            System.out.println("Adding report");
             reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, expr, "Invalid type for operator '!'"));
         }
+        System.out.println("GET NOT EXPR TYPE");
         return getBooleanType();
     }
     public static Type getParenthesisExprType(JmmNode expr, SymbolTable table, String currentMethod, List<Report> reports) {
@@ -259,7 +279,6 @@ public class TypeUtils {
     }
 
     public static Type getIdType(String id, JmmNode node, SymbolTable table, String currentMethod, List<Report> reports) {
-        System.out.println("getIdType: " + id + " " + currentMethod + " " + table.getClassName() + " " + table.getFields());
         if (SymbolTableUtils.isLocal(id, currentMethod, table)) {
             return SymbolTableUtils.getLocal(id, currentMethod, table).getType();
         }

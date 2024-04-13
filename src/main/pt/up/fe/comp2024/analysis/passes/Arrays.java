@@ -16,6 +16,35 @@ public class Arrays extends AnalysisVisitor {
         addVisit(Kind.ARRAY_INDEX_EXPR, this::visitArrayAccess);
         addVisit(Kind.MEMBER_ACCESS_EXPR, this::visitMemberAccess);
         addVisit(Kind.ARRAY_DECL_EXPR, this::visitArrayDecl);
+        addVisit(Kind.ARRAY_ASSIGN_STMT, this::visitArrayIndexAssign);
+    }
+    private Void visitArrayIndexAssign(JmmNode node, SymbolTable table) {
+        var arrayId = node.get("id");
+        var index = node.getObject("index", JmmNode.class);
+        var value = node.getObject("value", JmmNode.class);
+        var arrayType = TypeUtils.getIdType(arrayId, node, table, currentMethod, this.getReports());
+        var indexType = TypeUtils.getExprType(index, table, currentMethod, this.getReports());
+        var valueType = TypeUtils.getExprType(value, table, currentMethod, this.getReports());
+
+        System.out.println("HELLO");
+        System.out.println(arrayType);
+        System.out.println(indexType);
+        System.out.println(valueType);
+        System.out.println("HELLO");
+
+        if (arrayType != null && !arrayType.isArray()) {
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, node, "Array access on non-array type"));
+        }
+        if (indexType != null && !TypeUtils.getIntType().equals(indexType)) {
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, index, "Array index must be of type int"));
+        }
+        if (arrayType != null && valueType != null && (
+                !arrayType.getName().equals(valueType.getName()) || valueType.isArray())
+        ) {
+            // should assign int to array element, but it's assigning either a different type or an array
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, value, "Array element assignment with different type"));
+        }
+        return null;
     }
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
