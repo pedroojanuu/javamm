@@ -134,12 +134,17 @@ public class TypeUtils {
                 return null;
             }
             var argList = methodCallExpr.getChild(methodCallExpr.getNumChildren() - 1);
+            var argNumber = argList.getNumChildren();
             var paramsST = table.getParameters(methodName);
             int varArgsIdx = -1;
             // If the calling method accepts varargs, it can accept both a variable number of arguments of
             // the same type as an array, or directly an array
             for (int i = 0; i < paramsST.size(); i++) {
                 var paramType = paramsST.get(i).getType();
+                if (argNumber <= i) { // cannot just check sizes because of varargs
+                    reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, argList, "Invalid number of arguments for method call"));
+                    break;
+                }
                 var argType = getExprType(argList.getChild(i), table, currentMethod, reports);
                 if (paramType.hasAttribute("varArgs")) {
                     varArgsIdx = i;

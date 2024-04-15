@@ -26,12 +26,6 @@ public class Arrays extends AnalysisVisitor {
         var indexType = TypeUtils.getExprType(index, table, currentMethod, this.getReports());
         var valueType = TypeUtils.getExprType(value, table, currentMethod, this.getReports());
 
-        System.out.println("HELLO");
-        System.out.println(arrayType);
-        System.out.println(indexType);
-        System.out.println(valueType);
-        System.out.println("HELLO");
-
         if (arrayType != null && !arrayType.isArray()) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, node, "Array access on non-array type"));
         }
