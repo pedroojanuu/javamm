@@ -37,6 +37,7 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         addVisit(METHOD_CALL_EXPR, this::visitMethodCallExpr);
         addVisit(THIS_EXPR, this::visitThisExpr);
         addVisit(NEW_OBJ_EXPR, this::visitNewObjExpr);
+        addVisit(PAREN_EXPR, this::visitParenExpr);
 
         setDefaultVisit(this::defaultVisit);
     }
@@ -220,6 +221,10 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
                 tempId + "." + type + ",\"<init>\").V" + END_STMT);
 
         return new OllirExprResult(tempId+"."+type, computation);
+    }
+
+    private OllirExprResult visitParenExpr(JmmNode node, Void unused) {
+        return visit(node.getJmmChild(0));
     }
 
     /**

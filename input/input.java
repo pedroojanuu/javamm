@@ -1,27 +1,8 @@
-import A;
+class MiscComplexArgs {
 
-class HelloWorld {
+    public static void main(String[] args) {
+        int result1;
 
-    public boolean x() {
-        A b;
-        A c;
-        int i;
-        int j;
-        boolean a;
-
-        A.print(10);
-        b = new A();
-        b.foo();
-        c = A.n();
-        i = A.sum(10);
-        j = 5 + this.y();
-        a = false;
-
-        return a;
-    }
-
-    public int y() {
-        return 1;
+        result1 = 2+5*(3/2)+1;
     }
 }
-
