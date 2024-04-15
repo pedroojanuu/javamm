@@ -416,7 +416,7 @@ public class JasminGenerator {
         String staticModifier = field.isStaticField() ? "static " : "";
         String finalModifier = field.isFinalField() ? "final " : "";
         String initialValue = field.isInitialized() ? " = " + field.getInitialValue() : "";
-        return ".field " + field.getFieldName() + " " + staticModifier + finalModifier +
+        return ".field " + staticModifier + finalModifier + field.getFieldName() + " " +
                 transformToJasminType(field.getFieldType()) + initialValue + NL;
     }
 
