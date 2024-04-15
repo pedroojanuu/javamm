@@ -1,8 +1,15 @@
 class MiscComplexArgs {
 
     public static void main(String[] args) {
-        int result1;
+        boolean result1;
+        MiscComplexArgs m;
 
-        result1 = 2+5*(3/2)+1;
+        m = new MiscComplexArgs();
+
+        result1 = m.foo(!(2 < 5 && 3 < 2) && !false, 55*2);
+    }
+
+    public boolean foo (boolean x, int i) {
+        return x && i < 5;
     }
 }
