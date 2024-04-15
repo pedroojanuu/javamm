@@ -1,15 +1,20 @@
+import io.iiiii;
+import io;
+
+
 class MiscComplexArgs {
+    public static void main(String[] args){
+        MiscComplexArgs iiiii;
+        int x;
 
-    public static void main(String[] args) {
-        boolean result1;
-        MiscComplexArgs m;
+        iiiii = new MiscComplexArgs();
 
-        m = new MiscComplexArgs();
+        x = iiiii.x();
 
-        result1 = m.foo(!(2 < 5 && 3 < 2) && !false, 55*2);
+        io.print();
     }
 
-    public boolean foo (boolean x, int i) {
-        return x && i < 5;
+    public int x() {
+        return 1;
     }
 }

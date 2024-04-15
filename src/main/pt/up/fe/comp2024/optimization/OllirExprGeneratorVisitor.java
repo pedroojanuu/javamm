@@ -24,8 +24,14 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
     private final SymbolTable table;
 
+    private List<JmmNode> importNodes = new ArrayList<>();
+
     public OllirExprGeneratorVisitor(SymbolTable table) {
         this.table = table;
+    }
+
+    public void appendImportNode(JmmNode node) {
+        importNodes.add(node);
     }
 
     @Override
@@ -114,10 +120,15 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
         String invoke = "";
         String type = "";
 
-        if (table.getImports().contains(objectName))
-            // since the "object" is a mere imported class, the method has to be static
-            invoke = "invokestatic";
-        else invoke = "invokevirtual";
+        invoke = "invokevirtual";
+
+        System.out.println(importNodes);
+
+        for (JmmNode imp : importNodes)
+            if (imp.get("ID").equals(objectName)) {
+                invoke = "invokestatic";
+                break;
+            }
 
         var assignAncestor = node.getAncestor(ASSIGN_STMT);
         if (assignAncestor.isPresent())
@@ -158,49 +169,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
             computation.append(invocation + END_STMT);
             code.append(resultTemp + type);
         }
-
-        /*if (objectName.equals("this")) {
-            resultTemp = OptUtils.getTemp();
-            computation.append(resultTemp);
-            computation.append(type + " " + ASSIGN + type + " ");
-            computation.append("invokevirtual(this, \"" + methodName + "\"");
-            if (!argsResult.isEmpty()) {
-                computation.append(", ");
-                int i;
-                for (i = 0; i < argsResult.size() - 1; i++)
-                    computation.append(argsResult.get(i).getCode() + ", ");
-                computation.append(argsResult.get(i).getCode());
-            }
-            computation.append(")" + type + END_STMT);
-        } else if (type.equals("") || TypeUtils.getExprType(node.getJmmChild(0), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null) != null) {
-            // field or local variable || method from import that has a result to be assigned
-            resultTemp = OptUtils.getTemp();
-            computation.append(resultTemp);
-            computation.append(type + " " + ASSIGN + type + " ");
-            computation.append("invokevirtual(" + objectName + ", \"" + methodName + "\"");
-            if (!argsResult.isEmpty()) {
-                computation.append(", ");
-                int i;
-                for (i = 0; i < argsResult.size() - 1; i++)
-                    computation.append(argsResult.get(i).getCode() + ", ");
-                computation.append(argsResult.get(i).getCode());
-            }
-            computation.append(")" + type + END_STMT);
-        } else {
-            // void method from import
-            code.append("invokestatic(" + objectName + ", \"" + methodName + "\"");
-            if (!argsResult.isEmpty()) {
-                code.append(", ");
-                int i;
-                for (i = 0; i < argsResult.size() - 1; i++)
-                    code.append(argsResult.get(i).getCode() + ", ");
-                code.append(argsResult.get(i).getCode());
-            }
-            code.append(")");
-        }
-
-        code.append(resultTemp + type);
-        */
 
         return new OllirExprResult(code.toString(), computation);
     }
@@ -244,9 +212,6 @@ public class OllirExprGeneratorVisitor extends PreorderJmmVisitor<Void, OllirExp
 
         return new OllirExprResult(temp + type, computation);
     }
-
-//    tmp0.bool :=.bool !.bool 1.bool;
-//    result1.bool :=.bool tmp0.bool;
 
     /**
      * Default visitor. Visits every child node and return an empty result.

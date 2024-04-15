@@ -92,6 +92,8 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         code.append(END_STMT);
 
+        exprVisitor.appendImportNode(node);
+
         return code.toString();
     }
 
