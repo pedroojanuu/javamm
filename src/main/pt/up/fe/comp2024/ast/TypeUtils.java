@@ -99,7 +99,7 @@ public class TypeUtils {
     public static Type getNotExprType(JmmNode expr, SymbolTable table, String currentMethod, List<Report> reports) {
         var innerExpr = expr.getChild(0);
         var innerType = getExprType(innerExpr, table, currentMethod, reports);
-        if (reports != null && reports.isEmpty() && innerType != null && !getBooleanType().equals(innerType)) {
+        if (reports != null && !ReportUtils.anyError(reports) && innerType != null && !getBooleanType().equals(innerType)) {
             reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, expr, "Invalid type for operator '!'"));
         }
         return getBooleanType();
@@ -116,14 +116,15 @@ public class TypeUtils {
      */
     public static String isValidMethodCall(JmmNode methodCallExpr, SymbolTable table, String currentMethod, List<Report> reports) {
         var defaultErrorMessage = "Unknown method call";
-        var invalidArgumentsMessage = "Invalid arguments for method call.";
+        var invalidArgumentsMessage = "Invalid arguments for method call";
+        var invalidNrArgumentsMessage = "Invalid number of arguments for method call";
 
         var object = methodCallExpr.getObject("object", JmmNode.class);
         var methodName = methodCallExpr.get("method");
         var objectType = getExprType(object, table, currentMethod, reports);
 
-        // e.g.: this.method(params); a = this, a.method(params);
-        if (table.getClassName().equals(getName(objectType))) {
+        if (objectType != null && table.getClassName().equals(getName(objectType))) {
+            // e.g.: this.method(params); a = this, a.method(params);
             boolean methodExists = table.getMethods().stream()
                     .anyMatch(m -> m.equals(methodName));
             if (!methodExists) {
@@ -139,30 +140,34 @@ public class TypeUtils {
             int varArgsIdx = -1;
             // If the calling method accepts varargs, it can accept both a variable number of arguments of
             // the same type as an array, or directly an array
-            for (int i = 0; i < paramsST.size(); i++) {
+            for (int i = 0; i < paramsST.size(); i++) { // parameters of method definition
                 var paramType = paramsST.get(i).getType();
-                if (argNumber <= i) { // cannot just check sizes because of varargs
-                    reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, argList, "Invalid number of arguments for method call"));
+                if (argNumber <= i) { // cannot just check sizes before loop because of varargs
+                    reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, argList, invalidNrArgumentsMessage));
                     break;
                 }
-                var argType = getExprType(argList.getChild(i), table, currentMethod, reports);
                 if (paramType.hasAttribute("varArgs")) {
                     varArgsIdx = i;
                     break;
                 }
+                var argType = getExprType(argList.getChild(i), table, currentMethod, reports);
                 if (!areTypesAssignable(argType, paramType, table)) {
                     return invalidArgumentsMessage;
                 }
             }
-            if (varArgsIdx == -1) {
+            if (varArgsIdx == -1) { // nothing varargs
                 if (argList.getNumChildren() != paramsST.size()) {
-                    return invalidArgumentsMessage;
+                    return invalidNrArgumentsMessage;
                 }
                 return null;
             }
 
+            // handling varargs
             var argType = getExprType(argList.getChild(varArgsIdx), table, currentMethod, reports);
-            if (getIntArrayType().equals(argType)) {
+            if (getIntArrayType().equals(argType)) {    // if it's an array, varargs accepts it
+                if (argList.getNumChildren() != paramsST.size()) {  // only if the number of arguments are correct
+                    return invalidNrArgumentsMessage;
+                }
                 return null;
             }
             for (int i = varArgsIdx; i < argList.getNumChildren(); i++) {

@@ -43,7 +43,6 @@ public class JmmAnalysisImpl implements JmmAnalysis {
                         e)
                 );
             }
-
         }
 
         return new JmmSemanticsResult(parserResult, table, reports);

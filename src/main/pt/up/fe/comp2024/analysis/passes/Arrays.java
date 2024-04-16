@@ -50,10 +50,10 @@ public class Arrays extends AnalysisVisitor {
         var index = method.getObject("index", JmmNode.class);
         var arrayType = TypeUtils.getExprType(array, table, currentMethod, this.getReports());
         var indexType = TypeUtils.getExprType(index, table, currentMethod, this.getReports());
-        if (!arrayType.isArray()) {
+        if (arrayType != null && !arrayType.isArray()) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, array, "Array access on non-array type"));
         }
-        if (!TypeUtils.getIntType().equals(indexType)) {
+        if (indexType != null && !TypeUtils.getIntType().equals(indexType)) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, index, "Array index must be of type int"));
         }
         return null;
@@ -80,7 +80,7 @@ public class Arrays extends AnalysisVisitor {
         var intType = TypeUtils.getIntType();
         for (var element : elements) {
             var elementType = TypeUtils.getExprType(element, table, currentMethod, this.getReports());
-            if (!intType.equals(elementType)) {
+            if (elementType != null && !intType.equals(elementType)) {
                 addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, element, "Array elements must be of type int"));
                 break;
             }

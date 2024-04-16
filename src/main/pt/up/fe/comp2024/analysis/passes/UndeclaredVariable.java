@@ -34,7 +34,7 @@ public class UndeclaredVariable extends AnalysisVisitor {
     private Void visitVarRefExpr(JmmNode varRefExpr, SymbolTable table) {
         if (currentMethod == null) {
             // should not be possible
-            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, varRefExpr, "Current method is not set."));
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, varRefExpr, "There is a variable reference outside of a method."));
         }
 
         // Check if exists a parameter or variable declaration with the same name as the variable reference

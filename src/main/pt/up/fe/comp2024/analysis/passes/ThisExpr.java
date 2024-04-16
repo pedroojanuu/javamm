@@ -23,7 +23,7 @@ public class ThisExpr extends AnalysisVisitor {
         return null;
     }
     private Void visitThisExpr(JmmNode thisExpr, SymbolTable table) {
-        if (currentMethod.get("isStatic").equals("true")) {
+        if (currentMethod.getObject("isStatic", Boolean.class).equals(true)) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, thisExpr, "This expression in static method"));
         }
         return null;

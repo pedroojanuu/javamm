@@ -23,17 +23,18 @@ public class BinExprTypes extends AnalysisVisitor  {
         currentMethod = method.get("name");
         return null;
     }
-    private void checkArithmetic(JmmNode left, JmmNode right, Type leftType, Type rightType, SymbolTable table) {
+    private void checkIntAuxiliar(JmmNode left, JmmNode right, Type leftType, Type rightType, SymbolTable table, String label) {
         var intType = TypeUtils.getIntType();
-        if (!intType.equals(leftType) || !intType.equals(rightType)) {
-            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, left, "Arithmetic operation with non-integer types"));
+        if ((leftType != null && !intType.equals(leftType)) || (rightType != null && !intType.equals(rightType))) {
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, left, label + " operation with non-integer types"));
         }
     }
+    private void checkArithmetic(JmmNode left, JmmNode right, Type leftType, Type rightType, SymbolTable table) {
+        checkIntAuxiliar(left, right, leftType, rightType, table, "Arithmetic");
+    }
+
     private void checkComparison(JmmNode left, JmmNode right, Type leftType, Type rightType, SymbolTable table) {
-        var intType = TypeUtils.getIntType();
-        if (!intType.equals(leftType) || !intType.equals(rightType)) {
-            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, left, "Comparison operation with non-integer types"));
-        }
+        checkIntAuxiliar(left, right, leftType, rightType, table, "Comparison");
     }
     private Void visitBinaryExpr(JmmNode binaryExpr, SymbolTable table) {
         var left = binaryExpr.getObject("left", JmmNode.class);
@@ -47,24 +48,16 @@ public class BinExprTypes extends AnalysisVisitor  {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, binaryExpr, "Binary expression with different types"));
         }
         else {
-            if (op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/")) {
-                checkArithmetic(left, right, leftType, rightType, table);
-            } else if (op.equals("<")) {
-                checkComparison(left, right, leftType, rightType, table);
-            }
-            else if (op.equals("&&") || op.equals("||")) {
-                var booleanType = TypeUtils.getBooleanType();
-                if (!booleanType.equals(leftType) || !booleanType.equals(rightType)) {
-                    addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, binaryExpr, "Logical operation with non-boolean types"));
+            switch (op) {
+                case "+", "-", "*", "/" -> checkArithmetic(left, right, leftType, rightType, table);
+                case "<" -> checkComparison(left, right, leftType, rightType, table);
+                case "&&", "||" -> {
+                    var booleanType = TypeUtils.getBooleanType();
+                    if ((leftType != null && !booleanType.equals(leftType)) || (rightType != null && !booleanType.equals(rightType))) {
+                        addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, binaryExpr, "Logical operation with non-boolean types"));
+                    }
                 }
-            }
-            else {
-                addReport(Report.newError(Stage.SEMANTIC,
-                        NodeUtils.getLine(binaryExpr),
-                        NodeUtils.getColumn(binaryExpr),
-                        "Unknown operator",
-                        null)
-                );
+                default -> addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, binaryExpr, "Unknown operator"));
             }
         }
         return null;
