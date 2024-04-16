@@ -28,6 +28,8 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
     private final SymbolTable table;
 
     private List<JmmNode> importNodes = new ArrayList<>();
+    private boolean visitingReturn = false;
+    private Type returnType = null;
 
     public OllirExprGeneratorVisitor(SymbolTable table) {
         this.table = table;
@@ -35,6 +37,16 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
 
     public void appendImportNode(JmmNode node) {
         importNodes.add(node);
+    }
+
+    public void setVisitingReturn(Type retType) {
+        this.visitingReturn = true;
+        this.returnType = retType;
+    }
+
+    public void unsetVisitingReturn() {
+        this.visitingReturn = false;
+        this.returnType = null;
     }
 
     @Override
@@ -201,6 +213,8 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         if (assignAncestor.isPresent())
             // type will be that of the lhs of the expression
             type = OptUtils.toOllirType(TypeUtils.getIdType(assignAncestor.get().get("id"), node.getParent(), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null));
+        else if (visitingReturn)
+            type = OptUtils.toOllirType(returnType);
         else type = ".V";
 
 

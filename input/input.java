@@ -1,15 +1,20 @@
 import A;
 
 class StructureFields {
-    A a;
+
+    int a;
 
     public static void main (String[] args) {}
 
-    public A x() {
-        A b;
-        b = new A();
-        a = b;
-        return a;
+    public int x() {
+        StructureFields s;
+        s = new StructureFields();
+
+        return s.y(a);
+    }
+
+    int y (int x) {
+        return x;
     }
 }
  /*
