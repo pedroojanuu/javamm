@@ -1,5 +1,6 @@
 package pt.up.fe.comp2024.optimization;
 
+import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
@@ -272,14 +273,60 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         return code.toString();
     }
 
+    private String classFieldAssign(JmmNode node) {
+        StringBuilder code = new StringBuilder();
+
+        String id = node.get("id");
+        String methodName = node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow();
+        String ollirType = OptUtils.toOllirType(TypeUtils.getIdType(id, node, table, methodName, null));
+
+        OllirExprResult lhs = exprVisitor.visit(node.getJmmChild(0));
+
+        code.append(lhs.getComputation());
+
+        code.append("putfield(this, " + id + ollirType + ", ");
+        code.append(lhs.getCode() + ").V" + END_STMT);
+
+        return code.toString();
+    }
+
     private String visitAssignStmt(JmmNode node, Void unused) {
 
-        var id = node.get("id");
+        String id = node.get("id");
         String methodName = node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow();
+
+        boolean isField = true;
+
+        Optional<List<Symbol>> methodLocals = table.getLocalVariablesTry(methodName);
+
+        if (methodLocals.isPresent()) {
+            List<Symbol> locals = methodLocals.get();
+            for (Symbol symbol : locals) {
+                if (symbol.getName().equals(id)) {
+                    isField = false;
+                    break;
+                }
+            }
+        }
+
+        Optional<List<Symbol>> methodParams = table.getParametersTry(methodName);
+
+        if (isField && methodParams.isPresent()) {
+            List<Symbol> params = methodParams.get();
+            for (Symbol symbol : params) {
+                if (symbol.getName().equals(id)) {
+                    isField = false;
+                    break;
+                }
+            }
+        }
+
+        if (isField) return classFieldAssign(node);
+
         Type type = TypeUtils.getIdType(id, node, table, methodName, null);
         String ollirType = OptUtils.toOllirType(type);
 
-        var rhs = exprVisitor.visit(node.getJmmChild(0));
+        OllirExprResult rhs = exprVisitor.visit(node.getJmmChild(0));
 
         StringBuilder code = new StringBuilder();
 
@@ -335,40 +382,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
     private String visitMethodCallExpr(JmmNode node, Void unused) {
         StringBuilder code = new StringBuilder();
-
-        /*List<JmmNode> args = null;
-
-        if (node.getChildren().size() > 1)
-            if (node.getJmmChild(1).getKind().equals("Arglist"))
-                args = node.getJmmChild(1).getChildren();
-
-        List<String> argsCode = new ArrayList<>();
-
-        if (args != null)
-            args.forEach(arg -> {
-                var result = exprVisitor.visit(arg);
-                code.append(result.getComputation());
-                argsCode.add(result.getCode());
-            });
-
-        Type idType = TypeUtils.getIdLiteralExprType(node.getJmmChild(0), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow());
-
-        // id is an import
-        if (Objects.isNull(idType)) code.append("invokestatic(");
-
-        code.append(node.getJmmChild(0).get("id") + ", \"" + node.get("method") + "\"");
-
-        if (!argsCode.isEmpty()) {
-            code.append(", ");
-            for (int i = 0; i < argsCode.size()-1; i++)
-                code.append(argsCode.get(i) + ", ");
-            code.append(argsCode.getLast());
-            }
-
-        code.append(")");
-
-        // id is an import
-        if (Objects.isNull(idType)) code.append(".V");*/
 
         var res = exprVisitor.visit(node);
         code.append(res.getComputation());
