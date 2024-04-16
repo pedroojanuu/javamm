@@ -1,20 +1,16 @@
-import io.iiiii;
-import io;
+import A;
 
+class StructureFields {
 
-class MiscComplexArgs {
-    public static void main(String[] args){
-        MiscComplexArgs iiiii;
-        int x;
+    A a;
 
-        iiiii = new MiscComplexArgs();
+    public static void main (String[] args) {}
 
-        x = iiiii.x();
-
-        io.print();
+    public A x() {
+        A b;
+        b = new A();
+        a = b;
+        return a;
     }
 
-    public int x() {
-        return 1;
-    }
 }

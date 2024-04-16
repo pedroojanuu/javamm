@@ -1,6 +1,7 @@
 package pt.up.fe.comp2024.optimization;
 
 import org.specs.comp.ollir.Ollir;
+import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
@@ -11,6 +12,7 @@ import pt.up.fe.comp2024.symboltable.SymbolTableUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static pt.up.fe.comp2024.ast.Kind.*;
 
@@ -86,11 +88,76 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         return new OllirExprResult(code, computation);
     }
 
+    private OllirExprResult classFieldVar(JmmNode node) {
+        StringBuilder computation = new StringBuilder();
+
+        String methodName = node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow();
+        Type type = TypeUtils.getExprType(node, table, methodName, null);
+        String ollirType = "";
+        if (type != null) ollirType = OptUtils.toOllirType(type);
+
+        String temp = OptUtils.getTemp();
+
+        computation.append(temp + ollirType + " " + ASSIGN + ollirType);
+        computation.append(" getfield(this, " + node.get("id") + ollirType);
+        computation.append(")" + ollirType + END_STMT);
+
+        return new OllirExprResult(temp + ollirType, computation);
+    }
 
     private OllirExprResult visitVarRef(JmmNode node, Void unused) {
 
         var id = node.get("id");
         String methodName = node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow();
+
+        boolean isField = false;
+
+        List<Symbol> classFields = table.getFields();
+
+        if (!isField) {
+            for (Symbol symbol : classFields) {
+                if (symbol.getName().equals(id)) {
+                    isField = true;
+                    break;
+                }
+            }
+        }
+
+        Optional<List<Symbol>> methodParams = table.getParametersTry(methodName);
+
+        if (isField && methodParams.isPresent()) {
+            List<Symbol> params = methodParams.get();
+            for (Symbol symbol : params) {
+                if (symbol.getName().equals(id)) {
+                    isField = false;
+                    break;
+                }
+            }
+        }
+
+        Optional<List<Symbol>> methodLocals = table.getLocalVariablesTry(methodName);
+
+        if (isField && methodLocals.isPresent()) {
+            List<Symbol> locals = methodLocals.get();
+            for (Symbol symbol : locals) {
+                if (symbol.getName().equals(id)) {
+                    isField = false;
+                    break;
+                }
+            }
+        }
+
+        if (isField) {
+            for (JmmNode imp : importNodes) {
+                if (imp.get("ID").equals(id)) {
+                    isField = false;
+                    break;
+                }
+            }
+        }
+
+        if (isField) return classFieldVar(node);
+
         Type type = TypeUtils.getExprType(node, table, methodName, null);
         String ollirType = "";
         if (type != null) ollirType = OptUtils.toOllirType(type);
