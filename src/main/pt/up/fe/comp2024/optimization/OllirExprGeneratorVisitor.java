@@ -146,7 +146,6 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
                 }
             }
         }
-
         if (isField) {
             for (JmmNode imp : importNodes) {
                 if (imp.get("ID").equals(id)) {
