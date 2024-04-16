@@ -1,18 +1,26 @@
-class StructureFields {
+import A;
 
-    int a;
-    int b;
+class StructureFields {
+    A a;
 
     public static void main (String[] args) {}
 
-    public int x() {
-        StructureFields s;
-        s = new StructureFields();
-
-        return s.a;
-    }
-
-    int y (int a, int b) {
-        return a + b;
+    public A x() {
+        A b;
+        b = new A();
+        a = b;
+        return a;
     }
 }
+ /*
+ .method public x().i32 {
+
+    putfield(this, i1.i32, 2.i32).V;
+
+    tmp0.i32 :=.i32 getfield(this, i1.i32).i32;
+    tmp1.i32 :=.i32 2.i32 *.i32 tmp0.i32;
+    i2.i32 :=.i32 tmp1.i32;
+
+    ret.i32 1.i32;
+    }
+  */

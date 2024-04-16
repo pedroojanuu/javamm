@@ -364,11 +364,9 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         StringBuilder code = new StringBuilder();
 
-        System.out.println(node);
+        var expr = OllirExprResult.EMPTY;
 
-        OllirExprResult expr = exprVisitor.visit(node);
-
-        System.out.println(expr);
+        expr = exprVisitor.visit(node);
 
         code.append(expr.getComputation());
         code.append(RET);
