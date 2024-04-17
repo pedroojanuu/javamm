@@ -1,13 +1,24 @@
-import B;
+import io;
 
-class A {
-    int c;
+class Simple {
 
-    B bar() {
-        return new B();
+    int field_1;
+    Foo mc;
+    Simple s2;
+
+
+    public int constInstr(){
+        return 1 + field_1;
     }
 
-    int a() {
-        return this.bar().foo();
+    public int add(int a, int b){
+        int c;
+        c = a + this.constInstr();
+        return c;
     }
+
+    public static void main(String[] args) {
+        io.println((new Simple()).add(2, 3) + 3);
+    }
+
 }
