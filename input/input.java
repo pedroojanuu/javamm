@@ -1,24 +1,13 @@
-import io;
-
 class Simple {
 
-    int field_1;
-    Foo mc;
-    Simple s2;
+    int a;
 
-
-    public int constInstr(){
-        return 1 + field_1;
+    public Simple newS() {
+        a = this.x();
+        return this;
     }
 
-    public int add(int a, int b){
-        int c;
-        c = a + this.constInstr();
-        return c;
+    int x() {
+        return 1;
     }
-
-    public static void main(String[] args) {
-        io.println((new Simple()).add(2, 3) + 3);
-    }
-
 }

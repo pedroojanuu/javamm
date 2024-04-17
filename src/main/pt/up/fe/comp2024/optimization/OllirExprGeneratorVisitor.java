@@ -78,10 +78,6 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         var lhs = visit(node.getJmmChild(0));
         var rhs = visit(node.getJmmChild(1));
 
-        System.out.println("\n\n" + node);
-        System.out.print(lhs + "\n");
-        System.out.print(rhs + "\n\n");
-
         StringBuilder computation = new StringBuilder();
 
         // code to compute the children
@@ -100,9 +96,6 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         Type type = TypeUtils.getExprType(node, table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null);
         computation.append(node.get("op")).append(OptUtils.toOllirType(type)).append(SPACE)
                 .append(rhs.getCode()).append(END_STMT);
-
-        System.out.println("Code: " + code + "\n");
-        System.out.println("Computation: " + computation + "\n");
 
         return new OllirExprResult(code, computation);
     }
@@ -253,7 +246,7 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
     }
 
     private OllirExprResult visitThisExpr(JmmNode node, Void unused) {
-        return new OllirExprResult("this");
+        return new OllirExprResult("this." + table.getClassName());
     }
 
     private OllirExprResult visitNewObjExpr(JmmNode node, Void unused) {
