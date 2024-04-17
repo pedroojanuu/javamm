@@ -241,7 +241,7 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
             type = OptUtils.toOllirType(TypeUtils.getIdType(assignAncestor.get().get("id"), node.getParent(), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null));
         else if (table.getMethods().contains(methodName)) {
             type = OptUtils.toOllirType(table.getReturnType(methodName));
-            if (!invokeAncestor.isPresent()) return visitCallExprDiscard(node, type);
+            if (!visitingReturn && !invokeAncestor.isPresent()) return visitCallExprDiscard(node, type);
         }
         else if (visitingReturn)
             type = OptUtils.toOllirType(returnType);

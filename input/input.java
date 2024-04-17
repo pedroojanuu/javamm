@@ -1,65 +1,33 @@
 import io;
 
-class MyClass {
 
-    public int add(int a, int b){
-        int c;
-        c = a + b;
-        return c;
+class Simple {
+
+    public Simple newS() {
+        return this;
     }
 
-    public int inc(int a){
-        int b;
-        b = a + 1;
-        return b;
+    public int func2(Simple s, int i) {
+        return i;
     }
 
-    public int half(int a){
-        int b;
-        b = a / 2;
-        return b;
+    public int func() {
+        Simple s;
+        s = this.newS();
+        return this.func2(s, 50);
     }
 
-    public static void main(String[] args){
-        int a;
-        int b;
-        int c;
-        MyClass d;
 
-        d = new MyClass();
+    public static void main(String[] args) {
 
-        a = 10;
-        b = 20;
-        c = d.add(a, b);
-        io.println(c); // 30
+        Simple s;
+        int val;
 
-        a = 10;
-        b = d.inc(a);
-        c = d.add(a, b);
-        a = d.half(c);
-        b = d.inc(a);
-        c = d.add(a, b);
-        a = d.half(c);
-        io.println(a); // 10
+        s = new Simple();
 
-        a = 10;
-        b = d.inc(a);
-        c = d.add(a, b);
-        a = d.half(c);
-        b = d.inc(a);
-        c = d.add(a, b);
-        a = d.half(c);
-        b = d.inc(a);
-        c = d.add(a, b);
-        io.println(c); // 21
+        val = s.func();
 
-        a = 10;
-        b = 1000;
-        c = d.inc(d.inc(d.inc(d.inc(d.inc(a)))));
-        c = d.add(c, d.half(d.half(d.half(b))));
-        io.println(d.half(c)); // 72
-
+        io.println(val);
 
     }
-
 }
