@@ -122,14 +122,15 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         var id = node.get("id");
         String methodName = node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow();
 
-        boolean isField = false;
+        boolean isField = true;
 
-        List<Symbol> classFields = table.getFields();
+        Optional<List<Symbol>> methodLocals = table.getLocalVariablesTry(methodName);
 
-        if (!isField) {
-            for (Symbol symbol : classFields) {
+        if (methodLocals.isPresent()) {
+            List<Symbol> locals = methodLocals.get();
+            for (Symbol symbol : locals) {
                 if (symbol.getName().equals(id)) {
-                    isField = true;
+                    isField = false;
                     break;
                 }
             }
@@ -147,17 +148,6 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
             }
         }
 
-        Optional<List<Symbol>> methodLocals = table.getLocalVariablesTry(methodName);
-
-        if (isField && methodLocals.isPresent()) {
-            List<Symbol> locals = methodLocals.get();
-            for (Symbol symbol : locals) {
-                if (symbol.getName().equals(id)) {
-                    isField = false;
-                    break;
-                }
-            }
-        }
         if (isField) {
             for (JmmNode imp : importNodes) {
                 if (imp.get("ID").equals(id)) {
@@ -211,8 +201,8 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         if (assignAncestor.isPresent())
             // type will be that of the lhs of the expression
             type = OptUtils.toOllirType(TypeUtils.getIdType(assignAncestor.get().get("id"), node.getParent(), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null));
-        else if (objectName.equals("this") && table.getMethods().contains(methodName))
-            type = OptUtils.toOllirType(table.getReturnType(methodName));
+//        else if (objectName.equals("this") && table.getMethods().contains(methodName))
+//            type = OptUtils.toOllirType(table.getReturnType(methodName));
         else if (visitingReturn)
             type = OptUtils.toOllirType(returnType);
         else type = ".V";
