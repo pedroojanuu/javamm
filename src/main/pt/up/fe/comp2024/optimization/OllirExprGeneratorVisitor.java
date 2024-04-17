@@ -176,6 +176,51 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         return new OllirExprResult(code);
     }
 
+    private OllirExprResult visitCallExprDiscard(JmmNode node, String ollirType) {
+
+        StringBuilder computation = new StringBuilder();
+        StringBuilder code = new StringBuilder();
+
+        OllirExprResult objectVisit = visit(node.getJmmChild(0));
+        computation.append(objectVisit.getComputation());
+        String objectName = objectVisit.getCode();
+        String methodName = node.get("method");
+
+        String invoke = "invokevirtual";
+
+        for (JmmNode imp : importNodes)
+            if (imp.get("ID").equals(objectName)) {
+                invoke = "invokestatic";
+                break;
+            }
+
+        List<OllirExprResult> argsResult = new ArrayList<>();
+
+        if (node.getChildren().size() > 1) {    // has args
+            List<JmmNode> args = node.getJmmChild(1).getChildren();
+            for (JmmNode arg : args) {
+                argsResult.add(visit(arg));
+            }
+        }
+
+        for (OllirExprResult argResult : argsResult)
+            computation.append(argResult.getComputation());
+
+        code.append(invoke + "(" + objectName + ", \"" + methodName + "\"");
+
+        if (!argsResult.isEmpty()) {
+            code.append(", ");
+            int i;
+            for (i = 0; i < argsResult.size() - 1; i++)
+                code.append(argsResult.get(i).getCode() + ", ");
+            code.append(argsResult.get(i).getCode());
+        }
+
+        code.append(")" + ollirType);
+
+        return new OllirExprResult(code.toString(), computation);
+    }
+
     private OllirExprResult visitMethodCallExpr(JmmNode node, Void unused) {
 
         StringBuilder computation = new StringBuilder();
@@ -189,6 +234,19 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         String invoke = "";
         String type = "";
 
+        Optional<JmmNode> assignAncestor = node.getAncestor(ASSIGN_STMT);
+        Optional<JmmNode> invokeAncestor = node.getAncestor(METHOD_CALL_EXPR);  // to determine if result will be discarded
+        if (assignAncestor.isPresent())
+            // type will be that of the lhs of the assignment expression
+            type = OptUtils.toOllirType(TypeUtils.getIdType(assignAncestor.get().get("id"), node.getParent(), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null));
+        else if (table.getMethods().contains(methodName)) {
+            type = OptUtils.toOllirType(table.getReturnType(methodName));
+            if (!invokeAncestor.isPresent()) return visitCallExprDiscard(node, type);
+        }
+        else if (visitingReturn)
+            type = OptUtils.toOllirType(returnType);
+        else type = ".V";
+
         invoke = "invokevirtual";
 
         for (JmmNode imp : importNodes)
@@ -196,17 +254,6 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
                 invoke = "invokestatic";
                 break;
             }
-
-        Optional<JmmNode> assignAncestor = node.getAncestor(ASSIGN_STMT);
-        if (assignAncestor.isPresent())
-            // type will be that of the lhs of the expression
-            type = OptUtils.toOllirType(TypeUtils.getIdType(assignAncestor.get().get("id"), node.getParent(), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null));
-//        else if (table.getMethods().contains(methodName))
-//            type = OptUtils.toOllirType(table.getReturnType(methodName));
-        else if (visitingReturn)
-            type = OptUtils.toOllirType(returnType);
-        else type = ".V";
-
 
         List<OllirExprResult> argsResult = new ArrayList<>();
 
@@ -219,6 +266,7 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
 
         for (OllirExprResult argResult : argsResult)
             computation.append(argResult.getComputation());
+
 
         StringBuilder invocation = new StringBuilder();
         invocation.append(invoke + "(" + objectName + ", \"" + methodName + "\"");
