@@ -1,33 +1,12 @@
-import io;
-
-
-class Simple {
-
-    public Simple newS() {
-        return this;
+import B;
+class A {
+    int c;
+    B bar() {
+        return new B();
     }
-
-    public int func2(Simple s, int i) {
-        return i;
-    }
-
-    public int func() {
-        Simple s;
-        s = this.newS();
-        return this.func2(s, 50);
-    }
-
-
-    public static void main(String[] args) {
-
-        Simple s;
-        int val;
-
-        s = new Simple();
-
-        val = s.func();
-
-        io.println(val);
-
+    int a() {
+        int c;
+        c = 2;
+        return this.bar().foo();
     }
 }

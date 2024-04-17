@@ -29,8 +29,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private final String PUBLIC = "public ";
     private final String RET = "ret";
 
-    private Set<JmmNode> varDeclTemp = new HashSet<>();
-
     private final SymbolTable table;
 
     private final OllirExprGeneratorVisitor exprVisitor;
@@ -135,10 +133,8 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         JmmNode varType = node.getChild(0);
         code.append(visit(varType));
 
-        if (fromString(node.getParent().getKind()) == MAIN_METHOD || fromString(node.getParent().getKind()) == OTHER_METHOD) {
-            varDeclTemp.add(node);
+        if (fromString(node.getParent().getKind()) == MAIN_METHOD || fromString(node.getParent().getKind()) == OTHER_METHOD)
             return "";
-        }
 
         code.append(END_STMT);
 
@@ -181,8 +177,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         code.append(R_BRACKET);
         code.append(NL);
-
-        varDeclTemp.clear();
 
         return code.toString();
     }
@@ -238,8 +232,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         code.append(R_BRACKET);
         code.append(NL);
-
-        varDeclTemp.clear();
 
         return code.toString();
     }
