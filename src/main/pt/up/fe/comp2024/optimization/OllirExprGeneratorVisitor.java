@@ -30,8 +30,6 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
     private List<JmmNode> importNodes = new ArrayList<>();
     private boolean visitingReturn = false;
     private Type returnType = null;
-    private boolean visitingArgImported = false;
-    private Type visitingArgImportedType = null;
 
     public OllirExprGeneratorVisitor(SymbolTable table) {
         this.table = table;
@@ -200,16 +198,8 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
 
         if (node.getChildren().size() > 1) {    // has args
             List<JmmNode> args = node.getJmmChild(1).getChildren();
-            System.out.println(args);
-            for (int i = 0; i < args.size(); i++) {
-                JmmNode arg = args.get(i);
-                if (arg.getKind().equals(METHOD_CALL_EXPR.toString()) && !table.getMethods().contains(arg.get("method"))) {
-                    this.visitingArgImported = true;
-                    this.visitingArgImportedType = table.getParameters(methodName).get(i).getType();
-                }
+            for (JmmNode arg : args) {
                 argsResult.add(visit(arg));
-                this.visitingArgImported = false;
-                this.visitingArgImportedType = null;
             }
         }
 
@@ -252,8 +242,7 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         else if (table.getMethods().contains(methodName)) {
             type = OptUtils.toOllirType(table.getReturnType(methodName));
             if (!visitingReturn && !invokeAncestor.isPresent()) return visitCallExprDiscard(node, type);
-        } else if (this.visitingArgImported)
-            type = OptUtils.toOllirType(this.visitingArgImportedType);
+        }
         else if (visitingReturn)
             type = OptUtils.toOllirType(returnType);
         else type = ".V";
@@ -270,16 +259,8 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
 
         if (node.getChildren().size() > 1) {    // has args
             List<JmmNode> args = node.getJmmChild(1).getChildren();
-            System.out.println(args);
-            for (int i = 0; i < args.size(); i++) {
-                JmmNode arg = args.get(i);
-                if (arg.getKind().equals(METHOD_CALL_EXPR.toString()) && !table.getMethods().contains(arg.get("method"))) {
-                    this.visitingArgImported = true;
-                    this.visitingArgImportedType = table.getParameters(methodName).get(i).getType();
-                }
+            for (JmmNode arg : args) {
                 argsResult.add(visit(arg));
-                this.visitingArgImported = false;
-                this.visitingArgImportedType = null;
             }
         }
 
