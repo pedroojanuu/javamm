@@ -30,6 +30,8 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
     private List<JmmNode> importNodes = new ArrayList<>();
     private boolean visitingReturn = false;
     private Type returnType = null;
+    private boolean visitingArgImported = false;
+    private Type visitingArgImportedType = null;
 
     public OllirExprGeneratorVisitor(SymbolTable table) {
         this.table = table;
@@ -198,8 +200,15 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
 
         if (node.getChildren().size() > 1) {    // has args
             List<JmmNode> args = node.getJmmChild(1).getChildren();
-            for (JmmNode arg : args) {
+            for (int i = 0; i < args.size(); i++) {
+                JmmNode arg = args.get(i);
+                if (arg.getKind().equals(METHOD_CALL_EXPR.toString()) && !table.getMethods().contains(arg.get("method"))) {
+                    this.visitingArgImported = true;
+                    this.visitingArgImportedType = table.getParameters(methodName).get(i).getType();
+                }
                 argsResult.add(visit(arg));
+                this.visitingArgImported = false;
+                this.visitingArgImportedType = null;
             }
         }
 
@@ -236,13 +245,14 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
 
         Optional<JmmNode> assignAncestor = node.getAncestor(ASSIGN_STMT);
         Optional<JmmNode> invokeAncestor = node.getAncestor(METHOD_CALL_EXPR);  // to determine if result will be discarded
-        if (assignAncestor.isPresent())
+        if (assignAncestor.isPresent() && !invokeAncestor.isPresent())
             // type will be that of the lhs of the assignment expression
             type = OptUtils.toOllirType(TypeUtils.getIdType(assignAncestor.get().get("id"), node.getParent(), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null));
         else if (table.getMethods().contains(methodName)) {
             type = OptUtils.toOllirType(table.getReturnType(methodName));
-            if (!visitingReturn && !invokeAncestor.isPresent()) return visitCallExprDiscard(node, type);
-        }
+            if (!visitingReturn && !assignAncestor.isPresent() && !invokeAncestor.isPresent()) return visitCallExprDiscard(node, type);
+        } else if (this.visitingArgImported)
+            type = OptUtils.toOllirType(this.visitingArgImportedType);
         else if (visitingReturn)
             type = OptUtils.toOllirType(returnType);
         else type = ".V";
@@ -259,8 +269,15 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
 
         if (node.getChildren().size() > 1) {    // has args
             List<JmmNode> args = node.getJmmChild(1).getChildren();
-            for (JmmNode arg : args) {
+            for (int i = 0; i < args.size(); i++) {
+                JmmNode arg = args.get(i);
+                if (arg.getKind().equals(METHOD_CALL_EXPR.toString()) && !table.getMethods().contains(arg.get("method"))) {
+                    this.visitingArgImported = true;
+                    this.visitingArgImportedType = table.getParameters(methodName).get(i).getType();
+                }
                 argsResult.add(visit(arg));
+                this.visitingArgImported = false;
+                this.visitingArgImportedType = null;
             }
         }
 
