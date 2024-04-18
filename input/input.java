@@ -1,12 +1,16 @@
 import B;
 class A {
-    int c;
-    B bar() {
+    public int foo1(B b, boolean a) {
+        return 0;
+    }
+
+    public B bar() {
         return new B();
     }
-    int a() {
-        int c;
-        c = 2;
-        return this.bar().foo();
+    public int testing() {
+        this.foo1(this.bar(), this.bar().another());
+
+        return 0;
     }
+
 }
