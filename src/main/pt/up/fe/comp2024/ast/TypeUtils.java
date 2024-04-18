@@ -134,15 +134,32 @@ public class TypeUtils {
                 }
                 return null;
             }
-            var argList = methodCallExpr.getChild(methodCallExpr.getNumChildren() - 1);
-            var argNumber = argList.getNumChildren();
+
             var paramsST = table.getParameters(methodName);
+            var argList = methodCallExpr.getChild(methodCallExpr.getNumChildren() - 1);
+            System.out.println(argList.getKind());
+            if (!argList.getKind().equals("Arglist")) {
+                // Danger: child (getNumChildren() - 1) might not be arglist (it's optional in the grammar)
+                System.out.println("DANGER: arglist not found in method call");
+
+                if (!paramsST.isEmpty()) {  // method call with no arguments but symbol table has parameter
+                    System.out.println("REPORTING ERROR line 131");
+                    return invalidNrArgumentsMessage;
+                }
+                else {  // method call with no parameters, as well as in the symbol table
+                    return null;
+                }
+            }
+
+            int argNumber = argList.getNumChildren();
+
             int varArgsIdx = -1;
             // If the calling method accepts varargs, it can accept both a variable number of arguments of
             // the same type as an array, or directly an array
             for (int i = 0; i < paramsST.size(); i++) { // parameters of method definition
                 var paramType = paramsST.get(i).getType();
                 if (argNumber <= i) { // cannot just check sizes before loop because of varargs
+                    System.out.println("REPORTING ERROR line 146");
                     reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, argList, invalidNrArgumentsMessage));
                     break;
                 }
@@ -157,6 +174,7 @@ public class TypeUtils {
             }
             if (varArgsIdx == -1) { // nothing varargs
                 if (argList.getNumChildren() != paramsST.size()) {
+                    System.out.println("REPORTING ERROR line 161");
                     return invalidNrArgumentsMessage;
                 }
                 return null;
@@ -166,6 +184,7 @@ public class TypeUtils {
             var argType = getExprType(argList.getChild(varArgsIdx), table, currentMethod, reports);
             if (getIntArrayType().equals(argType)) {    // if it's an array, varargs accepts it
                 if (argList.getNumChildren() != paramsST.size()) {  // only if the number of arguments are correct
+                    System.out.println("REPORTING ERROR line 171");
                     return invalidNrArgumentsMessage;
                 }
                 return null;
