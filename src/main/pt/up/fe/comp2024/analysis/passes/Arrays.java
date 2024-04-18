@@ -75,8 +75,8 @@ public class Arrays extends AnalysisVisitor {
         }
         return null;
     }
-    private Void visitArrayDecl(JmmNode method, SymbolTable table) {
-        var elements = method.getChildren();
+    private Void visitArrayDecl(JmmNode arrayDecl, SymbolTable table) {
+        var elements = arrayDecl.getChildren();
         var intType = TypeUtils.getIntType();
         for (var element : elements) {
             var elementType = TypeUtils.getExprType(element, table, currentMethod, this.getReports());

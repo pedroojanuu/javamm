@@ -146,7 +146,7 @@ public class TypeUtils {
                     System.out.println("REPORTING ERROR line 131");
                     return invalidNrArgumentsMessage;
                 }
-                else {  // method call with no parameters, as well as in the symbol table
+                else {  // method call with no parameters, symbol also no parameters table
                     return null;
                 }
             }
@@ -197,7 +197,10 @@ public class TypeUtils {
             }
             return null;
         }
-
+        if (objectType != null && getName(objectType).equals(table.getSuper())) {
+            // type from extends, assume methods are valid
+            return null;
+        }
         // assume that methods from imports are valid
         var importId = object.getOptional("id").orElse(null);
         if (SymbolTableUtils.hasImport(table, importId) || SymbolTableUtils.hasImport(table, getName(objectType))) {
@@ -216,20 +219,24 @@ public class TypeUtils {
         var objectType = getExprType(object, table, currentMethod, reports);
 
         // e.g.: this.method(params); a = this, a.method(params);
-        if (table.getClassName().equals(getName(objectType))) {
-            var method = table.getMethods().stream()
-                    .filter(m -> m.equals(methodName))
-                    .findFirst()
-                    .orElse(null);
-
-            if (method == null && reports != null) {
+        var method = table.getMethods().stream()
+                .filter(m -> m.equals(methodName))
+                .findFirst()
+                .orElse(null);
+        boolean methodFound = method != null;
+        if (objectType != null && table.getClassName().equals(getName(objectType))) {
+            if (!methodFound && reports != null) {    // method comes from import, object type is my class
                 var superName = objectType.getOptionalObject("super").orElse("");
                 if (superName.equals("")) {
                     reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, methodCallExpr, "Unknown method '" + methodName + "' for class '" + table.getClassName() + "'"));
                 }
             }
-
             return table.getReturnType(method);
+        }
+        if (objectType != null) {
+            if (getName(objectType).equals(table.getSuper())) {
+                return null;
+            }
         }
 
         // assume that methods from imports are valid
