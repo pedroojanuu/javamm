@@ -200,41 +200,33 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append("(");
         List<JmmNode> params = node.getChildren(PARAM);
         if (!params.isEmpty()) {
-            int i;
-            for (i = 0; i < params.size() - 1; i++) {
-//                JmmNode param = params.get(i);
-//                String paramCode = visit(param);
-//                code.append(paramCode + ", ");
-                code.append(visit(params.get(i)) + ", ");
-            }
-//            var lastParam = params.get(i);
-//            code.append(visit(lastParam));
+            for (int i = 0; i < params.size() - 1; i++) code.append(visit(params.get(i)) + ", ");
             code.append(visit(params.getLast()));
         }
         code.append(")");
 
         // type
 //        boolean isVoid = Objects.equals(node.get("methodType"), "void");
-//        if (!isVoid) {
-//            String retType = visit(node.getJmmChild(0));
-//            code.append(retType);
-//        } else code.append(OptUtils.toOllirType(TypeUtils.getVoidType()));
+//
+//        if (!isVoid) code.append(visit(node.getJmmChild(0)));
+//        else code.append(OptUtils.toOllirType(TypeUtils.getVoidType()));
         code.append(visit(node.getJmmChild(0)));
 
         code.append(L_BRACKET);
 
-        boolean isVoid = Objects.equals(node.get("methodType"), "void");
-
         // rest of its children stmts
-        int afterParam = params.size() + (isVoid? 0 : 1);
-        for (int i = afterParam; i < node.getNumChildren(); i++) {
-            var child = node.getJmmChild(i);
-            if (!isVoid && i == node.getNumChildren()-1)
-                code.append(returnStmt(child));
-            else code.append(visit(child));
-        }
+        int afterParam = params.size() + 1;
+//        for (int i = afterParam; i < node.getNumChildren(); i++) {
+//            var child = node.getJmmChild(i);
+//            if (!isVoid && i == node.getNumChildren()-1)
+//                code.append(returnStmt(child));
+//            else code.append(visit(child));
+//        }
+        for (int i = afterParam; i < node.getNumChildren() - 1; i++)
+            code.append(visit(node.getJmmChild(i)));
+        code.append(returnStmt(node.getChildren().getLast()));
 
-        if (isVoid) code.append(RET + ".V" + END_STMT);
+//        if (isVoid) code.append(RET + ".V" + END_STMT);
 
         code.append(R_BRACKET);
         code.append(NL);
@@ -243,26 +235,10 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     }
 
     private String visitParam(JmmNode node, Void unused) {
-//        String type = visit(node.getJmmChild(0));
-//        String id = node.get("name");
-//
-//        return id + type;
-
         return node.get("name") + visit(node.getJmmChild(0));
     }
 
     private String visitExprStmt(JmmNode node, Void unused) {
-//        StringBuilder code = new StringBuilder();
-//
-//        var res = exprVisitor.visit(node.getJmmChild(0));
-//
-//        code.append(res.getComputation());
-//        code.append(res.getCode());
-//
-//        code.append(END_STMT);
-//
-//        return code.toString();
-
         OllirExprResult res = exprVisitor.visit(node.getJmmChild(0));
 
         return res.getComputation() + res.getCode() + END_STMT;
