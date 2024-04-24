@@ -27,9 +27,8 @@ public class JmmAnalysisImpl implements JmmAnalysis {
 
         JmmNode rootNode = parserResult.getRootNode();
 
-        SymbolTable table = JmmSymbolTableBuilder.build(rootNode);
-
         List<Report> reports = new ArrayList<>();
+        SymbolTable table = JmmSymbolTableBuilder.build(rootNode, reports);
 
         // Visit all nodes in the AST
         for (var analysisPass : analysisPasses) {
@@ -44,7 +43,6 @@ public class JmmAnalysisImpl implements JmmAnalysis {
                         e)
                 );
             }
-
         }
 
         return new JmmSemanticsResult(parserResult, table, reports);

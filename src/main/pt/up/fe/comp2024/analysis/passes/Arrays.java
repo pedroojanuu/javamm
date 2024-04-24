@@ -16,6 +16,29 @@ public class Arrays extends AnalysisVisitor {
         addVisit(Kind.ARRAY_INDEX_EXPR, this::visitArrayAccess);
         addVisit(Kind.MEMBER_ACCESS_EXPR, this::visitMemberAccess);
         addVisit(Kind.ARRAY_DECL_EXPR, this::visitArrayDecl);
+        addVisit(Kind.ARRAY_ASSIGN_STMT, this::visitArrayIndexAssign);
+    }
+    private Void visitArrayIndexAssign(JmmNode node, SymbolTable table) {
+        var arrayId = node.get("id");
+        var index = node.getObject("index", JmmNode.class);
+        var value = node.getObject("value", JmmNode.class);
+        var arrayType = TypeUtils.getIdType(arrayId, node, table, currentMethod, this.getReports());
+        var indexType = TypeUtils.getExprType(index, table, currentMethod, this.getReports());
+        var valueType = TypeUtils.getExprType(value, table, currentMethod, this.getReports());
+
+        if (arrayType != null && !arrayType.isArray()) {
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, node, "Array access on non-array type"));
+        }
+        if (indexType != null && !TypeUtils.getIntType().equals(indexType)) {
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, index, "Array index must be of type int"));
+        }
+        if (arrayType != null && valueType != null && (
+                !arrayType.getName().equals(valueType.getName()) || valueType.isArray())
+        ) {
+            // should assign int to array element, but it's assigning either a different type or an array
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, value, "Array element assignment with different type"));
+        }
+        return null;
     }
     private Void visitMethodDecl(JmmNode method, SymbolTable table) {
         currentMethod = method.get("name");
@@ -27,10 +50,10 @@ public class Arrays extends AnalysisVisitor {
         var index = method.getObject("index", JmmNode.class);
         var arrayType = TypeUtils.getExprType(array, table, currentMethod, this.getReports());
         var indexType = TypeUtils.getExprType(index, table, currentMethod, this.getReports());
-        if (!arrayType.isArray()) {
+        if (arrayType != null && !arrayType.isArray()) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, array, "Array access on non-array type"));
         }
-        if (!TypeUtils.getIntType().equals(indexType)) {
+        if (indexType != null && !TypeUtils.getIntType().equals(indexType)) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, index, "Array index must be of type int"));
         }
         return null;
@@ -40,17 +63,24 @@ public class Arrays extends AnalysisVisitor {
         String member = method.get("member");
         var leftExprType = TypeUtils.getExprType(leftExpr, table, currentMethod, this.getReports());
 
-        if (member.equals("length") && !leftExprType.isArray()) {
-            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, leftExpr, "Access length on non-array type"));
+        if (member.equals("length")) {
+            if (leftExprType != null && !leftExprType.isArray()) {
+                addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, leftExpr, "Access length on non-array type"));
+            }
+            return null;
+        }
+        if (!table.getMethods().contains(member)) {
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, method, "Accessing field or invalid member"));
+            return null;
         }
         return null;
     }
-    private Void visitArrayDecl(JmmNode method, SymbolTable table) {
-        var elements = method.getChildren();
+    private Void visitArrayDecl(JmmNode arrayDecl, SymbolTable table) {
+        var elements = arrayDecl.getChildren();
         var intType = TypeUtils.getIntType();
         for (var element : elements) {
             var elementType = TypeUtils.getExprType(element, table, currentMethod, this.getReports());
-            if (!intType.equals(elementType)) {
+            if (elementType != null && !intType.equals(elementType)) {
                 addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, element, "Array elements must be of type int"));
                 break;
             }

@@ -21,4 +21,8 @@ class Test {
 
 	    return c;
 	}
+
+	public static int staticFoo() {
+		return 0;
+	}
 }

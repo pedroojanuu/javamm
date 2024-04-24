@@ -40,10 +40,10 @@ public class Methods extends AnalysisVisitor {
     private Void visitMainMethodDecl(JmmNode method, SymbolTable table) {
         setCurrentMethodName(method);
 
-        var paramType = method.get("paramType");
+        var paramTypeStr = method.get("paramType");
         String generalMessage = "A void method must always be static and be called main.";
-        if (!paramType.equals("String")) {
-            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, method, generalMessage + "It must have a String[] parameter"));
+        if (!paramTypeStr.equals("String")) {
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, method, generalMessage + " It must have a String[] parameter"));
         }
 
         var methodName = method.get("name");
@@ -55,7 +55,7 @@ public class Methods extends AnalysisVisitor {
     private Void visitMethodCall(JmmNode methodCall, SymbolTable table) {
         String message = TypeUtils.isValidMethodCall(methodCall, table, currentMethod, this.getReports());
 
-        if (message != null && this.getReports().isEmpty()) {
+        if (message != null && !ReportUtils.anyError(this.getReports())) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, methodCall, message));
         }
 

@@ -17,16 +17,8 @@ class SymbolTable extends Quicksort {
 	}
 
 	public boolean method2(int intParam1, boolean boolParam1) {
-        boolean boolLocal1;
-        boolLocal1 = (1 < 2) && (5 > 4);
-
-		return boolParam1 || boolLocal1;
+		return boolParam1;
 	}
-
-	public int recursiveMethod(int n) {
-	    Test test = new Test();
-	    return recursiveMethod(test.foo());
-    }
 
 	public static void main(String[] args) {
 	}

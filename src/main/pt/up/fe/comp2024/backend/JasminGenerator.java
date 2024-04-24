@@ -11,6 +11,7 @@ import pt.up.fe.specs.util.utilities.StringLines;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 //Notas falta - extends, constructors, True and false, operators, objRef&Arrays
 //Imports em jasmin
@@ -34,9 +35,11 @@ public class JasminGenerator {
     List<Report> reports;
 
     String code;
+    int stackSize = 0;
 
     Method currentMethod;
     ClassUnit currentClass;
+    HashMap<String, String> importTable;
 
     private final FunctionClassMap<TreeNode, String> generators;
 
@@ -67,10 +70,35 @@ public class JasminGenerator {
         return reports;
     }
 
+    // start of the import table, for each line in code, if it starts with import, add it to the import table
+    // Exmple: "import org.Class1;" -> <"Class1","org/Class1">
+    public void createImportTable(String code){
+        importTable = new HashMap<>();
+        String[] lines = code.split("\n");
+        for (String line : lines) {
+            if (line.startsWith("import")) {
+                String[] parts = line.split(" ");
+                String[] parts2 = parts[1].split(";");
+                String[] parts3 = parts2[0].split("\\.");
+                String className = parts3[parts3.length-1];
+                String path = parts2[0].replace(".", "/");
+                importTable.put(className, path);
+            }
+        }
+    }
+
+    public String getImportedClass(String className) {
+        if(importTable.containsKey(className))
+            return importTable.get(className);
+        else
+            return className;
+    }
+
     public String build() {
 
         // This way, build is idempotent
         if (code == null) {
+            createImportTable(ollirResult.getOllirCode());
             code = generators.apply(ollirResult.getOllirClass());
 //            if(true) throw new RuntimeException(code);
         }
@@ -88,22 +116,32 @@ public class JasminGenerator {
         code.append(".class ").append(className).append(NL).append(NL);
 
         // TODO: Hardcoded to Object, needs to be expanded
-//        String superClass = classUnit.getSuperClass() == null ? "java/lang/Object" : classUnit.getSuperClass();
-        String superClass = "java/lang/Object";
-        code.append(".super ").append(superClass).append(NL).append(NL);
-
-        // generate a single constructor method
-        var defaultConstructor = """
-                ;default constructor
-                .method public <init>()V
-                    aload_0
-                    invokespecial java/lang/Object/<init>()V
-                    return
-                .end method
-                """;
-        code.append(defaultConstructor);
+        if(classUnit.getSuperClass() != null) {
+            String superClassName = getImportedClass(classUnit.getSuperClass());
+            code.append(".super ").append(superClassName).append(NL).append(NL);
+        } else {
+            code.append(".super java/lang/Object").append(NL).append(NL);
+        }
 
         // generate code for all other methodst/up/fe/comp/cp2/jasmin/
+        for (var field : ollirResult.getOllirClass().getFields()) {
+            code.append(generators.apply(field));
+        }
+        code.append(NL);
+
+        if(classUnit.getSuperClass() == null) {
+            // generate a single constructor method
+            var defaultConstructor = """
+                    ;default constructor
+                    .method public <init>()V
+                        aload_0
+                        invokespecial java/lang/Object/<init>()V
+                        return
+                    .end method
+                    """;
+            code.append(defaultConstructor);
+        }
+
         for (var method : ollirResult.getOllirClass().getMethods()) {
 
             // Ignore constructor, since there is always one constructor
@@ -132,7 +170,7 @@ public class JasminGenerator {
             return "Ljava/lang/String;";
         } else if (type.getTypeOfElement() == ElementType.OBJECTREF) {
             ClassType castType = (ClassType) type;
-            return "L" + castType.getName() + ";";
+            return "L" + getImportedClass(castType.getName()) + ";";
         } else if (type.getTypeOfElement() == ElementType.CLASS) {
             return "Ljava/lang/Class;";
         } else if(type.getTypeOfElement() == ElementType.ARRAYREF) {
@@ -187,6 +225,9 @@ public class JasminGenerator {
                     .collect(Collectors.joining(NL + TAB, TAB, NL));
 
             code.append(instCode);
+            for(int i = 0; i < stackSize; i++)
+                code.append("pop").append(NL);
+            stackSize = 0;
         }
 
         code.append(".end method\n");
@@ -198,6 +239,7 @@ public class JasminGenerator {
     }
 
     private String generateAssign(AssignInstruction assign) {
+        stackSize--;
         if(currentMethod == null)
             throw new RuntimeException("Method not set");
         var code = new StringBuilder();
@@ -231,11 +273,13 @@ public class JasminGenerator {
     }
 
     private String generateLiteral(LiteralElement literal) {
+        stackSize++;
         return "ldc " + literal.getLiteral() + NL;
     }
 
     private String generateOperand(Operand operand) {
         // get register
+        stackSize++;
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
         if(operand.getType().getTypeOfElement() == ElementType.INT32 ||
                 operand.getType().getTypeOfElement() == ElementType.BOOLEAN)
@@ -245,6 +289,7 @@ public class JasminGenerator {
     }
 
     private String generateBinaryOp(BinaryOpInstruction binaryOp) {
+        stackSize--;
         var code = new StringBuilder();
 
         // load values on the left and on the right
@@ -299,25 +344,31 @@ public class JasminGenerator {
                 returnInst.getOperand().getType().getTypeOfElement() == ElementType.BOOLEAN) {
             code.append(generators.apply(returnInst.getOperand()));
             code.append("ireturn").append(NL);
+            stackSize--;
         } else {
             code.append(generators.apply(returnInst.getOperand()));
             code.append("areturn").append(NL);
+            stackSize--;
         }
 
         return code.toString();
     }
 
     private String generateCall(CallInstruction call) {
+        stackSize++;
         var code = new StringBuilder();
 
         if (call.getInvocationType() == CallType.NEW) {
             ClassType castType = (ClassType) call.getReturnType();
-            return "new " + castType.getName() + NL +
+            return "new " + getImportedClass(castType.getName()) + NL +
                     "dup" + NL;
         }
 
         // Append code to load caller object
-        code.append(generators.apply(call.getCaller()));
+        if(call.getInvocationType() != CallType.invokestatic) {
+            code.append(generators.apply(call.getCaller()));
+            stackSize--;
+        }
 
         String argList = "";
 
@@ -325,12 +376,13 @@ public class JasminGenerator {
         for (var arg : call.getArguments()) {
             code.append(generators.apply(arg));
             argList += transformToJasminType((arg.getType()));
+            stackSize--;
         }
 
         if(call.getMethodNameTry().isEmpty())
             throw new RuntimeException("Call Method doesn't exist");
 
-        String callType = transformToJasminType(call.getReturnType());
+        String returnType = transformToJasminType(call.getReturnType());
 
         if(!call.getMethodName().isLiteral())
             throw new RuntimeException("Call Method Name is not a literal");
@@ -338,17 +390,24 @@ public class JasminGenerator {
         if(callMethodName.getType().getTypeOfElement() != ElementType.STRING)
             throw new RuntimeException("Call Method Name must be a STRING");
 
-        ClassType callerType = (ClassType) call.getCaller().getType();
+        String className;
+        if(call.getInvocationType() == CallType.invokestatic)
+            className = getImportedClass(((Operand) call.getCaller().toElement()).getName());
+        else
+            className = getImportedClass(((ClassType) call.getCaller().getType()).getName());
 
         // generate code for calling method
         code.append(call.getInvocationType())
                 .append(" ")
-                .append(callerType.getName())
+                .append(className)
                 .append("/")
                 .append(callMethodName.getLiteral().substring(1, callMethodName.getLiteral().length() - 1))
                 .append("(" + argList + ")")
-                .append(callType)
+                .append(returnType)
                 .append(NL);
+
+        if (returnType.equals("V"))
+            stackSize--;
 
         return code.toString();
     }
@@ -357,11 +416,12 @@ public class JasminGenerator {
         String staticModifier = field.isStaticField() ? "static " : "";
         String finalModifier = field.isFinalField() ? "final " : "";
         String initialValue = field.isInitialized() ? " = " + field.getInitialValue() : "";
-        return ".field " + field.getFieldName() + " " + staticModifier + finalModifier +
+        return ".field " + staticModifier + finalModifier + field.getFieldName() + " " +
                 transformToJasminType(field.getFieldType()) + initialValue + NL;
     }
 
     private String generatePutField(PutFieldInstruction putField) {
+        stackSize -= 2;
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
@@ -370,8 +430,6 @@ public class JasminGenerator {
 
         // store value in the stack in destination
         var field = putField.getField();
-
-        generators.apply(putField.getValue());
 
         code.append("putfield ")
                 .append(currentClass.getClassName())
@@ -384,10 +442,12 @@ public class JasminGenerator {
     }
 
     private String generateGetField(GetFieldInstruction getFieldInstruction) {
+        stackSize++;
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
         code.append(generators.apply(getFieldInstruction.getObject()));
+        stackSize--;
 
         // store value in the stack in destination
         var field = getFieldInstruction.getField();

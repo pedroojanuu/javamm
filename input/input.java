@@ -1,32 +1,15 @@
-import io;
-class Factorial {
-    int a;
-    // int... b;    // Variable declarations, field declarations and method returns cannot be vararg
-    String e;
-    int myMain;
-    String _mainvalue;
-    int ifValue;
-    int elseValue;
-    int lengthValue;
-    public int computeFactorial(int num){
-        int num_aux ;
-        if (num < 1)
-            num_aux = 1;
-        else
-            num_aux = num * (this.computeFactorial(num-1));
-        return num_aux;
+import B;
+class A {
+    public int foo(B b, boolean a) {
+        return 0;
     }
-    public static void main(String[] args){
-        io.println(new Factorial().computeFactorial(10)); //assuming the existence
-        // of the classfile io.class
+    public B bar() {
+        return new B();
     }
-    /*
-    public int computeFactorial(int num){
-        int num_aux ;
-        if (num < 1)
-            num_aux = 1;
-        else
-            num_aux = num * (this.computeFactorial(num-1));
-        return num_aux;
-     */
+    public int testing() {
+        boolean p2;
+        p2 = this.bar().another();
+        this.foo(this.bar(), p2);
+        return 0;
+    }
 }

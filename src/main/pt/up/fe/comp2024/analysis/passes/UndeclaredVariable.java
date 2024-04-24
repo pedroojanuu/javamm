@@ -32,26 +32,26 @@ public class UndeclaredVariable extends AnalysisVisitor {
     }
 
     private Void visitVarRefExpr(JmmNode varRefExpr, SymbolTable table) {
-        SpecsCheck.checkNotNull(currentMethod, () -> "Expected current method to be set");
+        if (currentMethod == null) {
+            // should not be possible
+            addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, varRefExpr, "There is a variable reference outside of a method."));
+        }
 
         // Check if exists a parameter or variable declaration with the same name as the variable reference
         var varRefName = varRefExpr.get("id");
 
         // Var is a field, return
-        if (table.getFields().stream()
-                .anyMatch(param -> param.getName().equals(varRefName))) {
+        if (SymbolTableUtils.isField(varRefName, table)) {
             return null;
         }
 
         // Var is a parameter, return
-        if (table.getParameters(currentMethod).stream()
-                .anyMatch(param -> param.getName().equals(varRefName))) {
+        if (SymbolTableUtils.isParam(varRefName, currentMethod, table)) {
             return null;
         }
 
         // Var is a declared variable, return
-        if (table.getLocalVariables(currentMethod).stream()
-                .anyMatch(varDecl -> varDecl.getName().equals(varRefName))) {
+        if (SymbolTableUtils.isLocal(varRefName, currentMethod, table)) {
             return null;
         }
 

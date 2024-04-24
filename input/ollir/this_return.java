@@ -1,0 +1,34 @@
+import io;
+
+
+class Simple {
+
+    public Simple newS() {
+        return this;
+    }
+
+    public int func2(Simple s, int i) {
+        this.newS().func2(this.newS(), 0);
+        return i;
+    }
+
+    public int func() {
+        Simple s;
+        s = this.newS();
+        return this.func2(s, 50);
+    }
+
+
+    public static void main(String[] args) {
+
+        Simple s;
+        int val;
+
+        s = new Simple();
+
+        val = s.func();
+
+        io.println(val);
+
+    }
+}

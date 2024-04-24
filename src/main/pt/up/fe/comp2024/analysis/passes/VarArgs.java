@@ -25,19 +25,21 @@ public class VarArgs extends AnalysisVisitor {
 
         for (int i = 0; i < paramNodes.size() - 1; i++) {
             var paramSymbol = paramSymbols.get(i);
-            if (paramSymbol.getType().hasAttribute("varArgs")) {
+            var paramType = paramSymbol.getType();
+            if (paramType != null && paramType.hasAttribute("varArgs")) {
                 var paramNode = paramNodes.get(i);
                 addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, paramNode,"VarArgs parameter must always be the last parameter"));
             }
         }
-        if (table.getReturnType(method.get("name")).hasAttribute("varArgs")) {
+        var returnType = table.getReturnType(method.get("name"));
+        if (returnType != null && returnType.hasAttribute("varArgs")) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, method,"Method return type cannot be VarArgs"));
         }
         return null;
     }
     private Void visitVarDecl(JmmNode varDecl, SymbolTable table) {
         var type = varDecl.getObject("varType", JmmNode.class);
-        if (type.getKind().equals(Kind.VAR_ARGS.getNodeName())) {
+        if (type != null && type.getKind().equals(Kind.VAR_ARGS.getNodeName())) {
             addReport(ReportUtils.buildErrorReport(Stage.SEMANTIC, varDecl,"VarArgs cannot be used in a variable declaration"));
         }
         return null;

@@ -13,31 +13,38 @@ public enum Kind {
     VAR_DECL,
     TYPE,
     METHOD_DECL,
-    OTHER_METHOD,
     MAIN_METHOD,
+    OTHER_METHOD,
     INT_ARRAY,
     VAR_ARGS,
     BOOLEAN,
     INT,
     OTHER_CLASSES,
     PARAM,
+    STMT_GROUP,
+    IF_STMT,
+    WHILE_STMT,
+    EXPR_STMT,
     ASSIGN_STMT,
+    ARRAY_ASSIGN_STMT,
     RETURN_STMT,
+    PAREN_EXPR,
+    METHOD_CALL_EXPR,
+    LEN_EXPR,
+    NOT_EXPR,
+    NEW_ARRAY_EXPR,
+    NEW_OBJ_EXPR,
     BINARY_EXPR,
     INT_LITERAL_EXPR,
     ID_LITERAL_EXPR,
-    WHILE_STMT,
-    IF_STMT,
-    ARRAY_INDEX_EXPR,
     THIS_EXPR,
-    MEMBER_ACCESS_EXPR,
-    NEW_OBJ_EXPR,
-    NEW_ARRAY_EXPR,
-    METHOD_CALL_EXPR,
-    BOOLEAN_LITERAL_EXPR,
     ARRAY_DECL_EXPR,
-    PAREN_EXPR,
-    NOT_EXPR,
+    INTEGER_LITERAL,
+    VAR_REF_EXPR,
+    ARRAY_INDEX_EXPR,
+    MEMBER_ACCESS_EXPR,
+    BOOLEAN_LITERAL_EXPR,
+    ARGLIST
     ;
 
     private static final Set<Kind> STATEMENTS = Set.of(ASSIGN_STMT, RETURN_STMT);
@@ -93,7 +100,7 @@ public enum Kind {
      * @return
      */
     public boolean check(JmmNode node) {
-        return node.getKind().equals(getNodeName());
+        return node.isInstance(this);
     }
 
     /**
