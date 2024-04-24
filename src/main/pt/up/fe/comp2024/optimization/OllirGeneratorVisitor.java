@@ -6,6 +6,7 @@ import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
+import pt.up.fe.comp2024.ast.Kind;
 import pt.up.fe.comp2024.ast.NodeUtils;
 import pt.up.fe.comp2024.ast.TypeUtils;
 import pt.up.fe.comp2024.symboltable.SymbolTableUtils;
@@ -76,8 +77,10 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         code.append(IMPORT);
 
-        var id = node.get("id");
-        var contents = id.substring(1, id.length() - 1).split(", ");
+        // Compound imports come from the tree as a list of strings
+        // i.e. "import a.b.c;" comes as ["a", "b", "c"]
+        String id = node.get("id");
+        String[] contents = id.substring(1, id.length() - 1).split(", ");
         String result = String.join(".", contents);
         code.append(result);
 
@@ -121,18 +124,19 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     }
 
     private String visitVarDecl(JmmNode node, Void unused) {
+        Kind parentKind = fromString(node.getParent().getKind());
+        if (parentKind == MAIN_METHOD || parentKind == OTHER_METHOD) return "";
+
         StringBuilder code = new StringBuilder();
 
-        if (fromString(node.getParent().getKind()) == CLASS_DECL)
-            code.append(FIELD + PUBLIC);
+//        if (parentKind == CLASS_DECL) code.append(FIELD + PUBLIC);
+
+        code.append(FIELD + PUBLIC);
 
         code.append(node.get("name"));
 
         JmmNode varType = node.getChild(0);
         code.append(visit(varType));
-
-        if (fromString(node.getParent().getKind()) == MAIN_METHOD || fromString(node.getParent().getKind()) == OTHER_METHOD)
-            return "";
 
         code.append(END_STMT);
 
@@ -140,12 +144,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     }
 
     private String visitType(JmmNode node, Void unused) {
-//        StringBuilder code = new StringBuilder();
-//
-//        code.append(OptUtils.toOllirType(node));
-//
-//        return code.toString();
-
         return OptUtils.toOllirType(node);
     }
 
@@ -185,18 +183,12 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         StringBuilder code = new StringBuilder(".method ");
 
-//        boolean isPublic = NodeUtils.getBooleanAttribute(node, "isPublic", "false");
-//
-//        if (isPublic) code.append("public ");
-
         if (NodeUtils.getBooleanAttribute(node, "isPublic", "false")) code.append("public ");
 
         // name
-//        var name = node.get("name");
-//        code.append(name);
         code.append(node.get("name"));
 
-        // param
+        // params
         code.append("(");
         List<JmmNode> params = node.getChildren(PARAM);
         if (!params.isEmpty()) {
@@ -206,27 +198,15 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(")");
 
         // type
-//        boolean isVoid = Objects.equals(node.get("methodType"), "void");
-//
-//        if (!isVoid) code.append(visit(node.getJmmChild(0)));
-//        else code.append(OptUtils.toOllirType(TypeUtils.getVoidType()));
         code.append(visit(node.getJmmChild(0)));
 
         code.append(L_BRACKET);
 
         // rest of its children stmts
-        int afterParam = params.size() + 1;
-//        for (int i = afterParam; i < node.getNumChildren(); i++) {
-//            var child = node.getJmmChild(i);
-//            if (!isVoid && i == node.getNumChildren()-1)
-//                code.append(returnStmt(child));
-//            else code.append(visit(child));
-//        }
-        for (int i = afterParam; i < node.getNumChildren() - 1; i++)
+        int afterParams = params.size() + 1;
+        for (int i = afterParams; i < node.getNumChildren() - 1; i++)
             code.append(visit(node.getJmmChild(i)));
         code.append(returnStmt(node.getChildren().getLast()));
-
-//        if (isVoid) code.append(RET + ".V" + END_STMT);
 
         code.append(R_BRACKET);
         code.append(NL);
