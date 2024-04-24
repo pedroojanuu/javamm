@@ -50,14 +50,12 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(PARAM, this::visitParam);
         addVisit(MAIN_METHOD, this::visitMainMethodDecl);
         addVisit(OTHER_METHOD, this::visitOtherMethodDecl);
-        //addVisit(INT_ARRAY, this::visitIntArray);
-        //addVisit(VAR_ARGS, this::visitVarArgs);
         //addVisit(IF_STMT, this::visitIfStmt);
         //addVisit(WHILE_STMT, this::visitWhileStmt);
         addVisit(EXPR_STMT, this::visitExprStmt);
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
         //addVisit(ARRAY_ASSIGN_STMT, this::visitArrayAssignStmt);
-        addVisit(METHOD_CALL_EXPR, this::visitMethodCallExpr);
+        //addVisit(, this::visitExpr);
 
         setDefaultVisit(this::defaultVisit);
     }
@@ -368,15 +366,15 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         return code.toString();
     }
 
-    private String visitMethodCallExpr(JmmNode node, Void unused) {
-        StringBuilder code = new StringBuilder();
-
-        var res = exprVisitor.visit(node);
-        code.append(res.getComputation());
-        code.append(res.getCode());
-
-        return code.toString();
-    }
+//    private String visitExpr(JmmNode node, Void unused) {
+//        StringBuilder code = new StringBuilder();
+//
+//        var res = exprVisitor.visit(node);
+//        code.append(res.getComputation());
+//        code.append(res.getCode());
+//
+//        return code.toString();
+//    }
 
     private String buildConstructor() {
 
