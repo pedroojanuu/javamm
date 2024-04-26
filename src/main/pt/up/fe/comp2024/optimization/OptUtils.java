@@ -13,6 +13,8 @@ import static pt.up.fe.comp2024.ast.Kind.TYPE;
 
 public class OptUtils {
     private static int tempNumber = -1;
+    private static int ifThenNumber = -1;
+    private static int ifEndNumber = -1;
 
     public static String getTemp() {
 
@@ -28,6 +30,16 @@ public class OptUtils {
 
         tempNumber += 1;
         return tempNumber;
+    }
+
+    public static String getIfThen() {
+        ifThenNumber++;
+        return "if_then_" + ifThenNumber;
+    }
+
+    public static String getIfEnd() {
+        ifEndNumber++;
+        return "if_end_" + ifEndNumber;
     }
 
     public static String toOllirType(JmmNode typeNode) {

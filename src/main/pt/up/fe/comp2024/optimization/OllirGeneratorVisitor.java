@@ -30,6 +30,8 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private final String FIELD = ".field ";
     private final String PUBLIC = "public ";
     private final String RET = "ret";
+    private final String IF = "if";
+    private final String GOTO = "goto";
 
     private final SymbolTable table;
 
@@ -52,11 +54,12 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(PARAM, this::visitParam);
         addVisit(MAIN_METHOD, this::visitMainMethodDecl);
         addVisit(OTHER_METHOD, this::visitOtherMethodDecl);
-        //addVisit(IF_STMT, this::visitIfStmt);
-        //addVisit(WHILE_STMT, this::visitWhileStmt);
+        addVisit(STMT_GROUP, this::visitStmtGroup);
+        addVisit(IF_STMT, this::visitIfStmt);
+//        addVisit(WHILE_STMT, this::visitWhileStmt);
         addVisit(EXPR_STMT, this::visitExprStmt);
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
-        //addVisit(ARRAY_ASSIGN_STMT, this::visitArrayAssignStmt);
+//        addVisit(ARRAY_ASSIGN_STMT, this::visitArrayAssignStmt);
 
         setDefaultVisit(this::defaultVisit);
     }
@@ -128,8 +131,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         if (parentKind == MAIN_METHOD || parentKind == OTHER_METHOD) return "";
 
         StringBuilder code = new StringBuilder();
-
-//        if (parentKind == CLASS_DECL) code.append(FIELD + PUBLIC);
 
         code.append(FIELD + PUBLIC);
 
@@ -210,6 +211,39 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         code.append(R_BRACKET);
         code.append(NL);
+
+        return code.toString();
+    }
+
+    private String visitStmtGroup(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+
+        for (JmmNode stmt : node.getChildren())
+            code.append(visit(stmt));
+
+        return code.toString();
+    }
+
+    private String visitIfStmt(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+
+        OllirExprResult condition = exprVisitor.visit(node.getJmmChild(0));
+        code.append(condition.getComputation());
+
+        String thenBody = visit(node.getJmmChild(1));
+        String elseBody = visit(node.getJmmChild(2));
+
+        String ifThen = OptUtils.getIfThen();
+        String ifEnd = OptUtils.getIfEnd();
+
+        code.append(IF + " (" + condition.getCode() + ") " + GOTO + " " + ifThen + END_STMT);
+        code.append(elseBody);
+        code.append(GOTO + " " + ifEnd + END_STMT);
+
+        code.append(ifThen + ":\n");
+        code.append(thenBody);
+
+        code.append(ifEnd + ":\n");
 
         return code.toString();
     }

@@ -53,15 +53,19 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
 
     @Override
     protected void buildVisitor() {
-        addVisit(ID_LITERAL_EXPR, this::visitVarRef);
+
+        addVisit(PAREN_EXPR, this::visitParenExpr);
+//        addVisit(ARRAY_INDEX_EXPR, this::visitArrayIndexExpr);
+        addVisit(METHOD_CALL_EXPR, this::visitMethodCallExpr);
+        addVisit(NOT_EXPR, this::visitNotExpr);
+//        addVisit(NEW_ARRAY_EXPR, this::visitNewArrayExpr);
+        addVisit(NEW_OBJ_EXPR, this::visitNewObjExpr);
         addVisit(BINARY_EXPR, this::visitBinExpr);
         addVisit(INT_LITERAL_EXPR, this::visitInteger);
         addVisit(BOOLEAN_LITERAL_EXPR, this::visitBooleanLiteral);
-        addVisit(METHOD_CALL_EXPR, this::visitMethodCallExpr);
+        addVisit(ID_LITERAL_EXPR, this::visitVarRef);
         addVisit(THIS_EXPR, this::visitThisExpr);
-        addVisit(NEW_OBJ_EXPR, this::visitNewObjExpr);
-        addVisit(PAREN_EXPR, this::visitParenExpr);
-        addVisit(NOT_EXPR, this::visitNotExpr);
+//        addVisit(ARRAY_DECL_EXPR, this::visitArrayDeclExpr);
 
         setDefaultVisit(this::defaultVisit);
     }

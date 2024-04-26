@@ -1,22 +1,37 @@
-import B;
+import ioPlus;
+class SwitchStat {
 
-class A {
-    public int foo(B b, boolean a) {
-        return 0;
+
+    public int func(int a){
+        int result;
+
+        if(a < 1){
+            result =1;
+        } else {
+            if(a < 2){
+                result = 2;
+            } else {
+                if(a < 3){
+                    result = 3;
+                } else {
+                    if(a < 4){
+                        result = 4;
+                    } else {
+                        if(a < 5){
+                            result = 5;
+                        } else {
+                            if(a < 6){
+                                result = 6;
+                            } else {
+                                result = 7;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 
-    public B bar() {
-        return new B();
-    }
-
-    public int testing() {
-        boolean p2;
-        p2 = this.bar().another();
-        this.foo(this.bar(), p2);
-        return 0;
-    }
-
-    public static void main(String[] args) {
-        B.print(123);
-    }
 }
