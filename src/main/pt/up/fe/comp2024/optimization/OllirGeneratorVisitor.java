@@ -1,7 +1,5 @@
 package pt.up.fe.comp2024.optimization;
 
-import org.specs.comp.ollir.Ollir;
-import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
@@ -30,6 +28,9 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
     private final String FIELD = ".field ";
     private final String PUBLIC = "public ";
     private final String RET = "ret";
+    private final String IF = "if";
+    private final String GOTO = "goto";
+    private final String END_LABEL = ":\n";
 
     private final SymbolTable table;
 
@@ -52,11 +53,12 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         addVisit(PARAM, this::visitParam);
         addVisit(MAIN_METHOD, this::visitMainMethodDecl);
         addVisit(OTHER_METHOD, this::visitOtherMethodDecl);
-        //addVisit(IF_STMT, this::visitIfStmt);
-        //addVisit(WHILE_STMT, this::visitWhileStmt);
+        addVisit(STMT_GROUP, this::visitStmtGroup);
+        addVisit(IF_STMT, this::visitIfStmt);
+        addVisit(WHILE_STMT, this::visitWhileStmt);
         addVisit(EXPR_STMT, this::visitExprStmt);
         addVisit(ASSIGN_STMT, this::visitAssignStmt);
-        //addVisit(ARRAY_ASSIGN_STMT, this::visitArrayAssignStmt);
+        addVisit(ARRAY_ASSIGN_STMT, this::visitArrayAssignStmt);
 
         setDefaultVisit(this::defaultVisit);
     }
@@ -128,8 +130,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         if (parentKind == MAIN_METHOD || parentKind == OTHER_METHOD) return "";
 
         StringBuilder code = new StringBuilder();
-
-//        if (parentKind == CLASS_DECL) code.append(FIELD + PUBLIC);
 
         code.append(FIELD + PUBLIC);
 
@@ -214,8 +214,63 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         return code.toString();
     }
 
+    private String visitStmtGroup(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+
+        for (JmmNode stmt : node.getChildren())
+            code.append(visit(stmt));
+
+        return code.toString();
+    }
+
+    private String visitIfStmt(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+
+        OllirExprResult condition = exprVisitor.visit(node.getJmmChild(0));
+        code.append(condition.getComputation());
+
+        String thenBody = visit(node.getJmmChild(1));
+        String elseBody = visit(node.getJmmChild(2));
+
+        String ifThen = OptUtils.getIfThen();
+        String ifEnd = OptUtils.getIfEnd();
+
+        code.append(IF + " (" + condition.getCode() + ") " + GOTO + SPACE + ifThen + END_STMT);
+        code.append(elseBody);
+        code.append(GOTO + SPACE + ifEnd + END_STMT);
+
+        code.append(ifThen + END_LABEL);
+        code.append(thenBody);
+
+        code.append(ifEnd + END_LABEL);
+
+        return code.toString();
+    }
+
     private String visitParam(JmmNode node, Void unused) {
         return node.get("name") + visit(node.getJmmChild(0));
+    }
+
+    private String visitWhileStmt(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+
+        OllirExprResult condition = exprVisitor.visit(node.getJmmChild(0));
+
+        String body = visit(node.getJmmChild(1));
+
+        String whileCond = OptUtils.getWhileCond();
+        String whileBody = OptUtils.getWhileBody();
+
+        code.append(GOTO + SPACE + whileCond + END_STMT);
+
+        code.append(whileBody + END_LABEL);
+        code.append(body);
+
+        code.append(whileCond + END_LABEL);
+        code.append(condition.getComputation());
+        code.append(IF + " (" + condition.getCode() + ") " + GOTO + SPACE + whileBody + END_STMT);
+
+        return code.toString();
     }
 
     private String visitExprStmt(JmmNode node, Void unused) {
@@ -299,6 +354,23 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(expr.getCode());
 
         code.append(END_STMT);
+
+        return code.toString();
+    }
+
+    private String visitArrayAssignStmt(JmmNode node, Void unused) {
+        StringBuilder code = new StringBuilder();
+
+        String intOllirType = OptUtils.toOllirType(TypeUtils.getIntType());
+
+        OllirExprResult indexVisit = exprVisitor.visit(node.getJmmChild(0));
+        OllirExprResult rhsVisit = exprVisitor.visit(node.getJmmChild(1));
+
+        code.append(indexVisit.getComputation());
+        code.append(rhsVisit.getComputation());
+
+        code.append(node.get("id") + "[" + indexVisit.getCode() + "]");
+        code.append(intOllirType + SPACE + ASSIGN + intOllirType + SPACE + rhsVisit.getCode() + END_STMT);
 
         return code.toString();
     }
