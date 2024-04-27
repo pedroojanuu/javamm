@@ -125,6 +125,7 @@ public class Launcher {
 //
 //        // Print Jasmin code
 //        System.out.println(jasminResult.getJasminCode());
+        // jasminResult.run();
     }
 
 }

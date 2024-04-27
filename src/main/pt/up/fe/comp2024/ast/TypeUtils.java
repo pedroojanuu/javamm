@@ -137,8 +137,9 @@ public class TypeUtils {
 
             var paramsST = table.getParameters(methodName);
             var argList = methodCallExpr.getChild(methodCallExpr.getNumChildren() - 1);
-            System.out.println(argList.getKind());
-            if (!argList.getKind().equals("Arglist")) {
+
+            if (Kind.fromString(argList.getKind()) != Kind.ARGLIST) {   // TODO: check if this works (not tested)
+            //if (!argList.getKind().equals("Arglist")) {
                 // Danger: child (getNumChildren() - 1) might not be arglist (it's optional in the grammar)
                 System.out.println("DANGER: arglist not found in method call");
 

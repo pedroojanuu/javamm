@@ -17,3 +17,5 @@ output.jasmin
 output.j
 
 auxFiles/
+
+compExtraTests/
