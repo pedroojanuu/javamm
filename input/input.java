@@ -1,29 +1,42 @@
-import Other;
-// import Person;
+import ioPlus;
+class ArrayAccess {
 
-class BasicMethods extends Other {
+    public int foo(int[] a) {
+        int result;
 
-    public int[] func4(){
-        int[] k;
-        k = new int[1];
-        return k;
+//        result = a[a.length];
+//        result = a[1] + a[2];
+//        result = result + a[3];
+//        result = 1 + a[4];
+
+        a[0] = 1;
+        a[1] = 2;
+        a[2] = 3;
+        a[3] = 4;
+        a[4] = 5;
+
+
+        return result;
     }
+
 
 }
 
 /*
-import Other;
-BasicMethods extends Other {
+import ioPlus;
+ArrayAccess extends Object {
 
 
-.method public func4().array.i32 {
-tmp0.i32 :=.i32 1.i32;
-tmp1.array.i32 :=.array.i32 new(array, tmp0.i32).array.i32;
-k.array.i32 :=.array.i32 tmp1.array.i32;
-ret.array.i32 k.array.i32;
+.method public foo(a.array.i32).i32 {
+a[0.i32].i32 :=.i32 1.i32;
+a[1.i32].i32 :=.i32 2.i32;
+a[2.i32].i32 :=.i32 3.i32;
+a[3.i32].i32 :=.i32 4.i32;
+a[4.i32].i32 :=.i32 5.i32;
+ret.i32 result.i32;
 }
 
-.construct BasicMethods().V {
+.construct ArrayAccess().V {
 invokespecial(this, "").V;
 }
 }
