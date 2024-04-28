@@ -14,6 +14,11 @@ public class JmmOptimizationImpl implements JmmOptimization {
         var constantFolding = new ConstantFolding();
         var constantPropagation = new ConstantPropagation();
 
+        var optimizationsEnabled = semanticsResult.getConfig().getOrDefault("optimize", "false");
+        if (optimizationsEnabled.equals("false")) {
+            return semanticsResult;
+        }
+
         boolean iterationHasModifications;
         do {
             iterationHasModifications = constantPropagation.visit(semanticsResult.getRootNode(), semanticsResult.getSymbolTable());
