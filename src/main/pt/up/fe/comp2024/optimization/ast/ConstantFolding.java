@@ -16,7 +16,7 @@ import java.util.function.BiFunction;
 
 public class ConstantFolding extends PostorderJmmVisitor<Void, Boolean> {
     @Override
-    public BiFunction<Boolean, List<Boolean>, Boolean> getReduce() {
+    protected BiFunction<Boolean, List<Boolean>, Boolean> getReduce() {
         return (a, b) -> a || b.stream().reduce(false, (x, y) -> x || y);
     }
     public ConstantFolding() {
@@ -28,7 +28,7 @@ public class ConstantFolding extends PostorderJmmVisitor<Void, Boolean> {
         addVisit(Kind.PAREN_EXPR, this::visitParenExpr);
         addVisit(Kind.NOT_EXPR, this::visitNotExpr);
     }
-    public Boolean visitParenExpr(JmmNode parenExpr, Void unused) {
+    private Boolean visitParenExpr(JmmNode parenExpr, Void unused) {
         JmmNode expr = parenExpr.getJmmChild(0);
         var exprKind = Kind.fromString(expr.getKind());
         if (exprKind == Kind.INT_LITERAL_EXPR || exprKind == Kind.BOOLEAN_LITERAL_EXPR) {
@@ -39,8 +39,7 @@ public class ConstantFolding extends PostorderJmmVisitor<Void, Boolean> {
         return false;
     }
 
-    public Boolean visitBinaryExpr(JmmNode binaryExpr, Void unused) {
-        System.out.println("BinaryExpr: " + binaryExpr.get("op"));
+    private Boolean visitBinaryExpr(JmmNode binaryExpr, Void unused) {
         String operator = binaryExpr.get("op");
         JmmNode left = binaryExpr.getJmmChild(0);
         JmmNode right = binaryExpr.getJmmChild(1);
@@ -88,17 +87,14 @@ public class ConstantFolding extends PostorderJmmVisitor<Void, Boolean> {
         }
         return false;
     }
-    public Boolean visitNotExpr(JmmNode notExpr, Void unused) {
+    private Boolean visitNotExpr(JmmNode notExpr, Void unused) {
         JmmNode expr = notExpr.getJmmChild(0);
 
         var exprKind = Kind.fromString(expr.getKind());
         if (exprKind == Kind.BOOLEAN_LITERAL_EXPR) {
             boolean value = expr.get("value").equals("true");
             JmmNode newBooleanLiteral = NodeHelper.createNewBooleanLiteral(!value);
-            JmmNode parent = notExpr.getParent();
-            System.out.println(parent.toTree());
             notExpr.replace(newBooleanLiteral);
-            System.out.println(parent.toTree());
 
             return true;
         }

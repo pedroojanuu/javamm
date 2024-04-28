@@ -16,13 +16,10 @@ public class JmmOptimizationImpl implements JmmOptimization {
 
         boolean iterationHasModifications;
         do {
-            iterationHasModifications = constantFolding.visit(semanticsResult.getRootNode(), null);
-            System.out.println("constantFolding has modifications: " + iterationHasModifications);
-            iterationHasModifications |= constantPropagation.visit(semanticsResult.getRootNode(), null);
-            System.out.println("constantPropagation has new modifications?: " + iterationHasModifications);
-            System.out.println("Iteration has modifications: " + iterationHasModifications);
+            iterationHasModifications = constantPropagation.visit(semanticsResult.getRootNode(), semanticsResult.getSymbolTable());
+            iterationHasModifications |= constantFolding.visit(semanticsResult.getRootNode(), null);
         } while (iterationHasModifications);
-        System.out.println(semanticsResult.getRootNode().toTree());
+
         return semanticsResult;
     }
     @Override
