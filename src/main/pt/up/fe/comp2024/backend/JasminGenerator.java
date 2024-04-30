@@ -10,6 +10,7 @@ import pt.up.fe.specs.util.utilities.StringLines;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 
@@ -26,6 +27,7 @@ import java.util.HashMap;
  * One JasminGenerator instance per OllirResult.
  */
 public class JasminGenerator {
+    private boolean cenas = true;
 
     private static final String NL = "\n";
     private static final String TAB = "   ";
@@ -64,6 +66,9 @@ public class JasminGenerator {
         generators.put(PutFieldInstruction.class, this::generatePutField);
         generators.put(GetFieldInstruction.class, this::generateGetField);
         generators.put(Field.class, this::generateField);
+//        generators.put(SingleOpCondInstruction.class, this::generateSingleOpCond);
+        generators.put(CondBranchInstruction.class, this::generateCondBranch);
+        generators.put(GotoInstruction.class, this::generateGoto);
     }
 
     public List<Report> getReports() {
@@ -100,7 +105,9 @@ public class JasminGenerator {
         if (code == null) {
             createImportTable(ollirResult.getOllirCode());
             code = generators.apply(ollirResult.getOllirClass());
-//            if(true) throw new RuntimeException(code);
+            //  -------------------
+            if(this.cenas) throw new RuntimeException(code);
+            //  -------------------
         }
 
         return code;
@@ -115,7 +122,6 @@ public class JasminGenerator {
         var className = ollirResult.getOllirClass().getClassName();
         code.append(".class ").append(className).append(NL).append(NL);
 
-        // TODO: Hardcoded to Object, needs to be expanded
         if(classUnit.getSuperClass() != null) {
             String superClassName = getImportedClass(classUnit.getSuperClass());
             code.append(".super ").append(superClassName).append(NL).append(NL);
@@ -220,13 +226,19 @@ public class JasminGenerator {
         code.append(TAB).append(".limit stack 99").append(NL);
         code.append(TAB).append(".limit locals 99").append(NL);
 
+        HashMap<Instruction, String> interseMethodLabels = new HashMap<>();
+        for (Map.Entry<String, Instruction> inst : method.getLabels().entrySet())
+            interseMethodLabels.put(inst.getValue(), inst.getKey());
+
         for (var inst : method.getInstructions()) {
+            if(interseMethodLabels.containsKey(inst))
+                code.append(interseMethodLabels.get(inst)).append(":").append(NL);
             var instCode = StringLines.getLines(generators.apply(inst)).stream()
                     .collect(Collectors.joining(NL + TAB, TAB, NL));
 
             code.append(instCode);
             for(int i = 0; i < stackSize; i++)
-                code.append("pop").append(NL);
+                code.append(TAB).append("pop").append(NL);
             stackSize = 0;
         }
 
@@ -244,9 +256,6 @@ public class JasminGenerator {
             throw new RuntimeException("Method not set");
         var code = new StringBuilder();
 
-        // generate code for loading what's on the right
-        code.append(generators.apply(assign.getRhs()));
-
         // store value in the stack in destination
         var lhs = assign.getDest();
 
@@ -259,7 +268,15 @@ public class JasminGenerator {
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
 
-        if(assign.getTypeOfAssign().getTypeOfElement() == ElementType.INT32 ||
+        if(operand instanceof ArrayOperand)
+            code.append("aload ").append(reg).append(NL);
+
+        // generate code for loading what's on the right
+        code.append(generators.apply(assign.getRhs()));
+
+        if(operand instanceof ArrayOperand)
+            code.append("iastore").append(NL);
+        else if(assign.getTypeOfAssign().getTypeOfElement() == ElementType.INT32 ||
                 assign.getTypeOfAssign().getTypeOfElement() == ElementType.BOOLEAN)
             code.append("istore ").append(reg).append(NL);
         else
@@ -281,7 +298,9 @@ public class JasminGenerator {
         // get register
         stackSize++;
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
-        if(operand.getType().getTypeOfElement() == ElementType.INT32 ||
+        if(operand instanceof ArrayOperand) {
+            return "aload " + reg + NL + "iload" + indexReg + NL;
+        }else if(operand.getType().getTypeOfElement() == ElementType.INT32 ||
                 operand.getType().getTypeOfElement() == ElementType.BOOLEAN)
             return "iload " + reg + NL;
         else
@@ -362,6 +381,13 @@ public class JasminGenerator {
             ClassType castType = (ClassType) call.getReturnType();
             return "new " + getImportedClass(castType.getName()) + NL +
                     "dup" + NL;
+        }
+
+        if(call.getInvocationType() == CallType.arraylength) {
+            code.append(generators.apply(call.getCaller()));
+            code.append("arraylength").append(NL);
+            stackSize--;
+            return code.toString();
         }
 
         // Append code to load caller object
@@ -460,5 +486,21 @@ public class JasminGenerator {
                 .append(NL);
 
         return code.toString();
+    }
+
+    private String generateCondBranch(CondBranchInstruction instruction) {
+        stackSize--;
+        var code = new StringBuilder();
+
+        // load values on the left and on the right
+        code.append(generators.apply(instruction.getCondition()));
+
+        code.append("ifne ").append(instruction.getLabel()).append(NL);
+
+        return code.toString();
+    }
+
+    private String generateGoto(GotoInstruction instruction) {
+        return "goto " + instruction.getLabel() + NL;
     }
 }

@@ -9,9 +9,18 @@ class SymbolTable extends Quicksort {
 	public int method1() {
 	    int intLocal1;
 	    boolean boolLocal1;
+        int[] intArray;
+        int i;
 
-		intLocal1 = 0 + 10 - 1 * 5 / (3+9);
-		boolLocal1 = true;
+        intArray[0] = 10;
+        intArray[1] = 20;
+        intArray[2] = 30;
+
+        i = 0;
+        while ((i < intArray.length)) {
+            boolLocal1 = (intArray[i] < 30);
+            i = i + 1;
+        }
 
 		return 0;
 	}
