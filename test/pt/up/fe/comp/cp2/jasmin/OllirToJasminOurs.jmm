@@ -12,6 +12,7 @@ class SymbolTable extends Quicksort {
         int[] intArray;
         int i;
 
+        intArray = new int[3];
         intArray[0] = 10;
         intArray[1] = 20;
         intArray[2] = 30;

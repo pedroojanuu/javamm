@@ -9,6 +9,8 @@ SymbolTable extends Quicksort {
 
     .method public method1().i32 {
 
+        intArray.array.i32 :=.array.i32 new(array, 3.i32).array.i32;
+
         intArray[0.i32].i32 :=.i32 10.i32;
 
         intArray[1.i32].i32 :=.i32 20.i32;
@@ -19,16 +21,16 @@ SymbolTable extends Quicksort {
 
         whileCond1:
 
-            t1.i32 :=.i32 arraylength(intArray.array.i32).i32;
-            t2.bool :=.bool i.i32 <.bool t1.i32;
+            t2.i32 :=.i32 arraylength(intArray.array.i32).i32;
+            t3.bool :=.bool i.i32 <.bool t2.i32;
 
-        if (t2.bool) goto whileLoop1;
+        if (t3.bool) goto whileLoop1;
         goto whileEnd1;
 
         whileLoop1:
 
-            t3.i32 :=.i32 intArray[i.i32].i32;
-            boolLocal1.bool :=.bool t3.i32 <.bool 30.i32;
+            t4.i32 :=.i32 intArray[i.i32].i32;
+            boolLocal1.bool :=.bool t4.i32 <.bool 30.i32;
 
             i.i32 :=.i32 i.i32 +.i32 1.i32;
 

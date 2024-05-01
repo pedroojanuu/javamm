@@ -27,7 +27,7 @@ import java.util.HashMap;
  * One JasminGenerator instance per OllirResult.
  */
 public class JasminGenerator {
-    private boolean cenas = true;
+    private boolean showCode = false;
 
     private static final String NL = "\n";
     private static final String TAB = "   ";
@@ -106,7 +106,7 @@ public class JasminGenerator {
             createImportTable(ollirResult.getOllirCode());
             code = generators.apply(ollirResult.getOllirClass());
             //  -------------------
-            if(this.cenas) throw new RuntimeException(code);
+            if(this.showCode) throw new RuntimeException(code);
             //  -------------------
         }
 
@@ -251,7 +251,6 @@ public class JasminGenerator {
     }
 
     private String generateAssign(AssignInstruction assign) {
-        stackSize--;
         if(currentMethod == null)
             throw new RuntimeException("Method not set");
         var code = new StringBuilder();
@@ -268,20 +267,26 @@ public class JasminGenerator {
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
 
-        if(operand instanceof ArrayOperand)
+        if(operand instanceof ArrayOperand) {
+            stackSize++;
             code.append("aload ").append(reg).append(NL);
+            code.append(generators.apply(((ArrayOperand) operand).getIndexOperands().get(0)));
+        }
 
         // generate code for loading what's on the right
         code.append(generators.apply(assign.getRhs()));
 
-        if(operand instanceof ArrayOperand)
+        if(operand instanceof ArrayOperand) {
+            stackSize -= 2;
             code.append("iastore").append(NL);
+        }
         else if(assign.getTypeOfAssign().getTypeOfElement() == ElementType.INT32 ||
                 assign.getTypeOfAssign().getTypeOfElement() == ElementType.BOOLEAN)
             code.append("istore ").append(reg).append(NL);
         else
             code.append("astore ").append(reg).append(NL);
 
+        stackSize--;
         return code.toString();
     }
 
@@ -299,7 +304,13 @@ public class JasminGenerator {
         stackSize++;
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
         if(operand instanceof ArrayOperand) {
-            return "aload " + reg + NL + "iload" + indexReg + NL;
+            ArrayOperand arrayOperand = (ArrayOperand) operand;
+            String code = "aload " + reg + NL +
+                          generators.apply(arrayOperand.getIndexOperands().get(0))  +
+                          "iaload" + NL;
+            stackSize++;
+            stackSize -= 2;
+            return code;
         }else if(operand.getType().getTypeOfElement() == ElementType.INT32 ||
                 operand.getType().getTypeOfElement() == ElementType.BOOLEAN)
             return "iload " + reg + NL;
@@ -378,9 +389,18 @@ public class JasminGenerator {
         var code = new StringBuilder();
 
         if (call.getInvocationType() == CallType.NEW) {
-            ClassType castType = (ClassType) call.getReturnType();
-            return "new " + getImportedClass(castType.getName()) + NL +
-                    "dup" + NL;
+            if (call.getReturnType() instanceof ClassType) {
+                ClassType castType = (ClassType) call.getReturnType();
+                code.append("new ").append(getImportedClass(castType.getName()))
+                        .append(NL).append("dup").append(NL);
+                return code.toString();
+            } else if (call.getReturnType() instanceof ArrayType) {
+                code.append(generators.apply(call.getArguments().get(0)));
+                code.append("newarray int").append(NL);
+                stackSize--;
+                return code.toString();
+            } else
+                new RuntimeException("Cannot instanciate new " + call.getReturnType().toString());
         }
 
         if(call.getInvocationType() == CallType.arraylength) {
