@@ -3,40 +3,63 @@ import Quicksort;
 
 class SymbolTable extends Quicksort {
 
-	int intField;
-	boolean boolField;
+    int intField;
+    boolean boolField;
+    int retValue;
+    int[] intArray;
 
-	public int method1() {
-	    int intLocal1;
-	    boolean boolLocal1;
-        int[] intArray;
+    public int method1() {
+        int[] res;
+        int retValue;
         int i;
+        int acc;
+        boolean boolLocal1;
 
         intArray = new int[3];
         intArray[0] = 10;
         intArray[1] = 20;
         intArray[2] = 30;
 
+        res = this.method2(intArray);
         i = 0;
-        while ((i < intArray.length)) {
-            boolLocal1 = (intArray[i] < 30);
+        acc = 0;
+        while (i < res.length) {
+            acc = acc + res[i];
             i = i + 1;
         }
 
-        if(i < 2){
-            boolField = false;
+        boolLocal1 = this.equals(acc, 2);
+        if(boolLocal1) {
+            retValue = 1;
         } else {
-            boolField = true;
+            retValue = 0;
+        } return retValue;
+    }
+
+    public int[] method2(int[] intArray) {
+        int i;
+        int [] returnArray;
+        boolean boolLocal1;
+        boolean retValue;
+
+        returnArray = new int[intArray.length];
+        i = 0;
+        while (i < intArray.length) {
+            if(intArray[i] < 30) {
+                returnArray[i] = 1;
+            } else {
+                returnArray[i] = 0;
+            }
+            i = i + 1;
         }
+        return returnArray;
+    }
 
-		return 0;
-	}
+    public boolean equals(int a, int b){
+        return !(a < b) && !(b < a);
+    }
 
-	public boolean method2(int intParam1, boolean boolParam1) {
-		return boolParam1;
-	}
-
-	public static void main(String[] args) {
-	}
+    public static void main(String[] args) {
+    }
 
 }

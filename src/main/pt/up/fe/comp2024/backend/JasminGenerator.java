@@ -27,7 +27,7 @@ import java.util.HashMap;
  * One JasminGenerator instance per OllirResult.
  */
 public class JasminGenerator {
-    private boolean showCode = false;
+    private final boolean showCode = false;
 
     private static final String NL = "\n";
     private static final String TAB = "   ";
@@ -44,6 +44,8 @@ public class JasminGenerator {
     HashMap<String, String> importTable;
 
     private final FunctionClassMap<TreeNode, String> generators;
+
+    private int numLessThan = 0;
 
     public JasminGenerator(OllirResult ollirResult) {
         this.ollirResult = ollirResult;
@@ -279,11 +281,11 @@ public class JasminGenerator {
         if(operand instanceof ArrayOperand) {
             stackSize -= 2;
             code.append("iastore").append(NL);
-        }
-        else if(assign.getTypeOfAssign().getTypeOfElement() == ElementType.INT32 ||
-                assign.getTypeOfAssign().getTypeOfElement() == ElementType.BOOLEAN)
+        } else if((assign.getTypeOfAssign().getTypeOfElement() == ElementType.INT32 ||
+                   assign.getTypeOfAssign().getTypeOfElement() == ElementType.BOOLEAN) &&
+                   !(operand.getType() instanceof ArrayType)) {
             code.append("istore ").append(reg).append(NL);
-        else
+        } else
             code.append("astore ").append(reg).append(NL);
 
         stackSize--;
@@ -340,12 +342,13 @@ public class JasminGenerator {
             case SHL -> "ishl";
             case SHR -> "ishr";
             case SHRR -> "iushr";
-            case LTH -> "isub" + NL + "iflt lessBranch" + NL + "iconst_0" + NL + "goto endLessBranch" + NL + "lessBranch:" + NL + "iconst_1" + NL + "endLessBranch:";
-            case GTH -> "isub" + NL + "ifgt greaterBranch" + NL + "iconst_0" + NL + "goto endGreaterBranch" + NL + "greaterBranch:" + NL + "iconst_1" + NL + "endGreaterBranch:";
-            case EQ -> "isub" + NL + "ifeq equalBranch" + NL + "iconst_0" + NL + "goto endEqualBranch" + NL + "equalBranch:" + NL + "iconst_1" + NL + "endEqualBranch:";
-            case NEQ -> "isub" + NL + "ifne notEqualBranch" + NL + "iconst_0" + NL + "goto endNotEqualBranch" + NL + "notEqualBranch:" + NL + "iconst_1" + NL + "endNotEqualBranch:";
-            case LTE -> "isub" + NL + "ifle lessEqualBranch" + NL + "iconst_0" + NL + "goto endLessEqualBranch" + NL + "lessEqualBranch:" + NL + "iconst_1" + NL + "endLessEqualBranch:";
-            case GTE -> "isub" + NL + "ifge greaterEqualBranch" + NL + "iconst_0" + NL + "goto endGreaterEqualBranch" + NL + "greaterEqualBranch:" + NL + "iconst_1" + NL + "endGreaterEqualBranch:";
+            case LTH -> "isub" + NL +
+                        "iflt lessBranch" + Integer.toString(++numLessThan) + NL +
+                        "iconst_0" + NL +
+                        "goto endLessBranch" + Integer.toString(numLessThan) + NL +
+                        "lessBranch" + Integer.toString(numLessThan) + ":" + NL +
+                        "iconst_1" + NL +
+                        "endLessBranch" + Integer.toString(numLessThan) + ":";
             default -> throw new NotImplementedException(binaryOp.getOperation().getOpType());
         };
 
@@ -459,10 +462,12 @@ public class JasminGenerator {
     }
 
     private String generateField(Field field) {
+        String accessModifier = field.getFieldAccessModifier() != AccessModifier.DEFAULT ?
+                field.getFieldAccessModifier().name().toLowerCase() + " " : " public ";
         String staticModifier = field.isStaticField() ? "static " : "";
         String finalModifier = field.isFinalField() ? "final " : "";
         String initialValue = field.isInitialized() ? " = " + field.getInitialValue() : "";
-        return ".field " + staticModifier + finalModifier + field.getFieldName() + " " +
+        return ".field " + accessModifier + staticModifier + finalModifier + field.getFieldName() + " " +
                 transformToJasminType(field.getFieldType()) + initialValue + NL;
     }
 
