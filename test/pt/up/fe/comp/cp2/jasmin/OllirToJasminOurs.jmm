@@ -23,6 +23,12 @@ class SymbolTable extends Quicksort {
             i = i + 1;
         }
 
+        if(i < 2){
+            boolField = false;
+        } else {
+            boolField = true;
+        }
+
 		return 0;
 	}
 

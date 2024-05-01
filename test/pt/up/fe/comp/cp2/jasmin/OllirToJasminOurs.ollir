@@ -37,6 +37,20 @@ SymbolTable extends Quicksort {
         goto whileCond1;
         whileEnd1:
 
+        t7.bool :=.bool i.i32 <.bool 2.i32;
+
+        if (t7.bool) goto if2;
+
+            putfield(this.SymbolTable, boolField.bool, 1.bool).V;
+
+        goto endif2;
+
+        if2:
+
+            putfield(this.SymbolTable, boolField.bool, 0.bool).V;
+
+        endif2:
+
         ret.i32 0.i32;
 
     }
