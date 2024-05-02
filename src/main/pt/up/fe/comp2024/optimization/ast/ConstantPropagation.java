@@ -134,46 +134,47 @@ public class ConstantPropagation extends AJmmVisitor<SymbolTable, Boolean> {
 
         JmmNode condition = whileNode.getJmmChild(0);
         Kind conditionKind = Kind.fromString(condition.getKind());
+        /*
         if (conditionKind.equals(Kind.BOOLEAN_LITERAL_EXPR) && condition.get("value").equals("false")) {
             whileNode.delete();
             return true;
         }
-        else {
-            // JmmNode body = whileNode.getJmmChild(1);
-            Boolean res = false;
+        else
+         */
+        // JmmNode body = whileNode.getJmmChild(1);
+        Boolean res = false;
 
-            // while (loop) statements need to be treated more carefully than ifs (because of statements before assignments)
-            // e.g. x = 0; while (...) { a = x; x = 1; a = x; }
-            // the first x cannot be replaced by an int literal, while the second x can be replaced by 1.
+        // while (loop) statements need to be treated more carefully than ifs (because of statements before assignments)
+        // e.g. x = 0; while (...) { a = x; x = 1; a = x; }
+        // the first x cannot be replaced by an int literal, while the second x can be replaced by 1.
 
-            // visit assign statements inside the loop and remove them from the values hashmap
-            // they will be added later when going through the loop if they have known values
+        // visit assign statements inside the loop and remove them from the values hashmap
+        // they will be added later when going through the loop if they have known values
 
-            visitOnlyAssigns = true;
-            System.out.println("visiting while for assigns");
-            valuesToRemove.push(new HashSet<>());
-            for (JmmNode child : whileNode.getChildren()) {
-                res |= visit(child, unused);
-            }
-            System.out.println("done visiting while for assigns: " + valuesToRemove.peek());
-            Set<String> toRemove = valuesToRemove.pop();
-            this.removeValues(toRemove);
-            visitOnlyAssigns = false;
-            System.out.println("values after while: " + values);
-
-            for (JmmNode child : whileNode.getChildren()) {
-                res |= visit(child, unused);
-            }
-
-            this.removeValues(toRemove);  // remove the values inside the while loop again after processing the loop
-            return res;
+        visitOnlyAssigns = true;
+        System.out.println("visiting while for assigns");
+        valuesToRemove.push(new HashSet<>());
+        for (JmmNode child : whileNode.getChildren()) {
+            res |= visit(child, unused);
         }
+        System.out.println("done visiting while for assigns: " + valuesToRemove.peek());
+        Set<String> toRemove = valuesToRemove.pop();
+        this.removeValues(toRemove);
+        visitOnlyAssigns = false;
+        System.out.println("values after while: " + values);
+
+        for (JmmNode child : whileNode.getChildren()) {
+            res |= visit(child, unused);
+        }
+
+        this.removeValues(toRemove);  // remove the values inside the while loop again after processing the loop
+        return res;
     }
     private Boolean visitIfStmt(JmmNode ifNode, SymbolTable unused) {
         if (visitOnlyAssigns) {
             return defaultVisitor(ifNode, unused);
         }
-
+        /*
         JmmNode condition = ifNode.getJmmChild(0);
         Kind conditionKind = Kind.fromString(condition.getKind());
         if (conditionKind.equals(Kind.BOOLEAN_LITERAL_EXPR)) {
@@ -193,25 +194,25 @@ public class ConstantPropagation extends AJmmVisitor<SymbolTable, Boolean> {
             return true;
         }
         else {
-            Boolean res = false;
-            boolean previousInsideIfStmt = insideIfStmt;
-            HashMap<String, Integer> previousValues = new HashMap<>(values);    // easier method to independently analyse if and else bodies
+         */
+        Boolean res = false;
+        boolean previousInsideIfStmt = insideIfStmt;
+        HashMap<String, Integer> previousValues = new HashMap<>(values);    // easier method to independently analyse if and else bodies
 
-            insideIfStmt = true;
-            valuesToRemove.push(new HashSet<>());
-            res |= visit(ifNode.getJmmChild(0), unused);    // boolean
+        insideIfStmt = true;
+        valuesToRemove.push(new HashSet<>());
+        res |= visit(ifNode.getJmmChild(0), unused);    // boolean
 
-            res |= visit(ifNode.getJmmChild(1), unused);    // ifBody
-            values = previousValues;
-            res |= visit(ifNode.getJmmChild(2), unused);    // elseBody
+        res |= visit(ifNode.getJmmChild(1), unused);    // ifBody
+        values = previousValues;
+        res |= visit(ifNode.getJmmChild(2), unused);    // elseBody
 
-            for (JmmNode child : ifNode.getChildren()) {
-                res |= visit(child, unused);
-            }
-            Set<String> toRemove = valuesToRemove.pop();
-            this.removeValues(toRemove);  // can remove from previousValues (or values coming from if or else)
-            insideIfStmt = previousInsideIfStmt;
-            return res;
+        for (JmmNode child : ifNode.getChildren()) {
+            res |= visit(child, unused);
         }
+        Set<String> toRemove = valuesToRemove.pop();
+        this.removeValues(toRemove);  // can remove from previousValues (or values coming from if or else)
+        insideIfStmt = previousInsideIfStmt;
+        return res;
     }
 }

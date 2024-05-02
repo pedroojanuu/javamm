@@ -9,4 +9,10 @@ class A extends B {
 
         return this.foo();
     }
+    int another_test() {
+        A a;
+        boolean b;
+        b = a.foo();
+        return 0;
+    }
 }
