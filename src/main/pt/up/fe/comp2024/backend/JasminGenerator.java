@@ -373,8 +373,8 @@ public class JasminGenerator {
 
         code.append(op).append(NL);
 
-        increaseStackSize();
         stackSize -= 2;
+        increaseStackSize();
 
         return code.toString();
     }
@@ -411,9 +411,6 @@ public class JasminGenerator {
 
     private String generateCall(CallInstruction call) {
         var code = new StringBuilder();
-
-        if (call.getReturnType().getTypeOfElement() != ElementType.VOID)
-            increaseStackSize();
 
         if (call.getInvocationType() == CallType.NEW) {
             if (call.getReturnType() instanceof ClassType) {
@@ -479,6 +476,9 @@ public class JasminGenerator {
                 .append(returnType)
                 .append(NL);
 
+        if (call.getReturnType().getTypeOfElement() != ElementType.VOID)
+            increaseStackSize();
+
         return code.toString();
     }
 
@@ -515,12 +515,13 @@ public class JasminGenerator {
     }
 
     private String generateGetField(GetFieldInstruction getFieldInstruction) {
-        increaseStackSize();
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
         code.append(generators.apply(getFieldInstruction.getObject()));
+
         stackSize--;
+        increaseStackSize();
 
         // store value in the stack in destination
         var field = getFieldInstruction.getField();
