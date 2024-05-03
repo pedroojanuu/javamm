@@ -39,6 +39,8 @@ public class JasminGenerator {
     String code;
     int stackSize = 0;
 
+    int maxStackSize = 0;
+
     Method currentMethod;
     ClassUnit currentClass;
     HashMap<String, String> importTable;
@@ -113,6 +115,13 @@ public class JasminGenerator {
         }
 
         return code;
+    }
+
+    private void increaseStackSize() {
+        stackSize++;
+        if (stackSize > maxStackSize) {
+            maxStackSize = stackSize;
+        }
     }
 
     private String generateClassUnit(ClassUnit classUnit) {
@@ -192,8 +201,10 @@ public class JasminGenerator {
     private String generateMethod(Method method) {
         // set method
         currentMethod = method;
+        maxStackSize = 0;
 
         var code = new StringBuilder();
+        var codeTemp = new StringBuilder();
 
         // calculate modifier
         var modifier = method.getMethodAccessModifier() != AccessModifier.DEFAULT ?
@@ -224,25 +235,34 @@ public class JasminGenerator {
                 .append(methodType)
                 .append(NL);
 
-        // Add limits
-        code.append(TAB).append(".limit stack 99").append(NL);
-        code.append(TAB).append(".limit locals 99").append(NL);
-
         HashMap<Instruction, String> interseMethodLabels = new HashMap<>();
         for (Map.Entry<String, Instruction> inst : method.getLabels().entrySet())
             interseMethodLabels.put(inst.getValue(), inst.getKey());
 
         for (var inst : method.getInstructions()) {
             if(interseMethodLabels.containsKey(inst))
-                code.append(interseMethodLabels.get(inst)).append(":").append(NL);
+                codeTemp.append(interseMethodLabels.get(inst)).append(":").append(NL);
             var instCode = StringLines.getLines(generators.apply(inst)).stream()
                     .collect(Collectors.joining(NL + TAB, TAB, NL));
 
-            code.append(instCode);
+            codeTemp.append(instCode);
             for(int i = 0; i < stackSize; i++)
                 code.append(TAB).append("pop").append(NL);
             stackSize = 0;
         }
+
+        // Get max register number
+        int maxReg = 0;
+        for (var var : method.getVarTable().values()) {
+            if (var.getVirtualReg() > maxReg) {
+                maxReg = var.getVirtualReg();
+            }
+        }
+
+        code.append(TAB).append(".limit stack ").append(maxStackSize).append(NL);
+        code.append(TAB).append(".limit locals ").append(maxReg + 1).append(NL);
+
+        code.append(codeTemp);
 
         code.append(".end method\n");
 
@@ -270,7 +290,7 @@ public class JasminGenerator {
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
 
         if(operand instanceof ArrayOperand) {
-            stackSize++;
+            increaseStackSize();
             code.append("aload ").append(reg).append(NL);
             code.append(generators.apply(((ArrayOperand) operand).getIndexOperands().get(0)));
         }
@@ -297,20 +317,20 @@ public class JasminGenerator {
     }
 
     private String generateLiteral(LiteralElement literal) {
-        stackSize++;
+        increaseStackSize();
         return "ldc " + literal.getLiteral() + NL;
     }
 
     private String generateOperand(Operand operand) {
         // get register
-        stackSize++;
+        increaseStackSize();
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
         if(operand instanceof ArrayOperand) {
             ArrayOperand arrayOperand = (ArrayOperand) operand;
             String code = "aload " + reg + NL +
                           generators.apply(arrayOperand.getIndexOperands().get(0))  +
                           "iaload" + NL;
-            stackSize++;
+            increaseStackSize();
             stackSize -= 2;
             return code;
         }else if(operand.getType().getTypeOfElement() == ElementType.INT32 ||
@@ -321,7 +341,6 @@ public class JasminGenerator {
     }
 
     private String generateBinaryOp(BinaryOpInstruction binaryOp) {
-        stackSize--;
         var code = new StringBuilder();
 
         // load values on the left and on the right
@@ -353,6 +372,9 @@ public class JasminGenerator {
         };
 
         code.append(op).append(NL);
+
+        increaseStackSize();
+        stackSize -= 2;
 
         return code.toString();
     }
@@ -388,14 +410,16 @@ public class JasminGenerator {
     }
 
     private String generateCall(CallInstruction call) {
-        stackSize++;
         var code = new StringBuilder();
+
+        if (call.getReturnType().getTypeOfElement() != ElementType.VOID)
+            increaseStackSize();
 
         if (call.getInvocationType() == CallType.NEW) {
             if (call.getReturnType() instanceof ClassType) {
                 ClassType castType = (ClassType) call.getReturnType();
                 code.append("new ").append(getImportedClass(castType.getName()))
-                        .append(NL).append("dup").append(NL);
+                        .append(NL);//.append("dup").append(NL);
                 return code.toString();
             } else if (call.getReturnType() instanceof ArrayType) {
                 code.append(generators.apply(call.getArguments().get(0)));
@@ -431,8 +455,6 @@ public class JasminGenerator {
         if(call.getMethodNameTry().isEmpty())
             throw new RuntimeException("Call Method doesn't exist");
 
-        String returnType = transformToJasminType(call.getReturnType());
-
         if(!call.getMethodName().isLiteral())
             throw new RuntimeException("Call Method Name is not a literal");
         LiteralElement callMethodName = (LiteralElement) call.getMethodName();
@@ -445,6 +467,8 @@ public class JasminGenerator {
         else
             className = getImportedClass(((ClassType) call.getCaller().getType()).getName());
 
+        String returnType = transformToJasminType(call.getReturnType());
+
         // generate code for calling method
         code.append(call.getInvocationType())
                 .append(" ")
@@ -454,9 +478,6 @@ public class JasminGenerator {
                 .append("(" + argList + ")")
                 .append(returnType)
                 .append(NL);
-
-        if (returnType.equals("V"))
-            stackSize--;
 
         return code.toString();
     }
@@ -472,7 +493,6 @@ public class JasminGenerator {
     }
 
     private String generatePutField(PutFieldInstruction putField) {
-        stackSize -= 2;
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
@@ -489,11 +509,13 @@ public class JasminGenerator {
                 .append(" " + transformToJasminType(field.getType()))
                 .append(NL);
 
+        stackSize -= 2;
+
         return code.toString();
     }
 
     private String generateGetField(GetFieldInstruction getFieldInstruction) {
-        stackSize++;
+        increaseStackSize();
         var code = new StringBuilder();
 
         // generate code for loading what's on the right
@@ -514,13 +536,14 @@ public class JasminGenerator {
     }
 
     private String generateCondBranch(CondBranchInstruction instruction) {
-        stackSize--;
         var code = new StringBuilder();
 
         // load values on the left and on the right
         code.append(generators.apply(instruction.getCondition()));
 
         code.append("ifne ").append(instruction.getLabel()).append(NL);
+
+        stackSize--;
 
         return code.toString();
     }
