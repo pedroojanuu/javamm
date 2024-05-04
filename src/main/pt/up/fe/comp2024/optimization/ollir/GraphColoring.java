@@ -103,9 +103,8 @@ public class GraphColoring {
         // for each node, assign the lowest register already not attributed to popped nodes
         return colors;
     }
-    public Map<String, Integer> apply(LivenessAnalysisResult livenessAnalysisResult, int registerNumberLimit) {
+    public Map<String, Integer> obtainResult(LivenessAnalysisResult livenessAnalysisResult, int registerNumberLimit) {
         Graph graph = this.getInterferenceGraph(livenessAnalysisResult);
         return this.colorGraph(graph, registerNumberLimit);
     }
-
 }

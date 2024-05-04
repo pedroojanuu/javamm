@@ -141,7 +141,12 @@ public class LivenessAnalysis {
         return null;
     }
 
-    private LivenessAnalysisResult performLivenessAnalysis() {
+    public LivenessAnalysisResult obtainResult(Method method) {
+        handlers.apply(method);
+        System.out.println("Method: " + method.getMethodName());
+        System.out.println("Used: " + usedVariables);
+        System.out.println("Defined: " + definedVariables);
+
         List<Set<String>> liveIn = new ArrayList<>(), liveOut = new ArrayList<>();
         int nrInstructions = currentMethod.getInstructions().size();
         for (int i = 0; i < nrInstructions; i++) {
@@ -173,19 +178,5 @@ public class LivenessAnalysis {
         } while(!liveIn.equals(prevLiveIn) || !liveOut.equals(prevLiveOut));    // repeat until liveIn and liveOut don't change
 
         return new LivenessAnalysisResult(liveIn, liveOut);
-    }
-    public OllirResult apply() {
-        for (Method method : ollirResult.getOllirClass().getMethods()) {
-            // perform optimizations (register allocation) for each method (independently)
-            handlers.apply(method);
-            LivenessAnalysisResult livenessAnalysisResult = this.performLivenessAnalysis();
-
-            System.out.println("Method: " + method.getMethodName());
-            System.out.println("Used: " + usedVariables);
-            System.out.println("Defined: " + definedVariables);
-
-            System.out.println(livenessAnalysisResult);
-        }
-        return ollirResult;
     }
 }

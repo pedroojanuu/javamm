@@ -15,11 +15,17 @@ public class NodeUtils {
     }
 
     public static int getIntegerAttribute(JmmNode node, String attribute, String defaultVal) {
+        if (node == null) {
+            return Integer.parseInt(defaultVal);
+        }
         String line = node.getOptional(attribute).orElse(defaultVal);
         return Integer.parseInt(line);
     }
 
     public static boolean getBooleanAttribute(JmmNode node, String attribute, String defaultVal) {
+        if (node == null) {
+            return Boolean.parseBoolean(defaultVal);
+        }
         String line = node.getOptional(attribute).orElse(defaultVal);
         return Boolean.parseBoolean(line);
     }

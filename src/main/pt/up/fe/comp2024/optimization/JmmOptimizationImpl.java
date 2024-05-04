@@ -5,7 +5,7 @@ import pt.up.fe.comp.jmm.ollir.JmmOptimization;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp2024.optimization.ast.ConstantFolding;
 import pt.up.fe.comp2024.optimization.ast.ConstantPropagation;
-import pt.up.fe.comp2024.optimization.ollir.LivenessAnalysis;
+import pt.up.fe.comp2024.optimization.ollir.RegisterAllocation;
 
 import java.util.Collections;
 
@@ -46,9 +46,9 @@ public class JmmOptimizationImpl implements JmmOptimization {
             return ollirResult;
         }
 
-        LivenessAnalysis livenessAnalysis = new LivenessAnalysis(ollirResult);
+        RegisterAllocation ra = new RegisterAllocation(ollirResult, registerNumberOption);
         if (registerNumberOption == 0) {   // as few local registers as possible
-            return livenessAnalysis.apply(); // TODO
+            return ra.apply(); // TODO
         }
         // limit local registers to registerNumberOption: this can result in an abort if the number of registers is not enough
         // TODO
@@ -63,6 +63,6 @@ public class JmmOptimizationImpl implements JmmOptimization {
          */
         //ollirResult.getConfig().get("")
         // return registerOptimization.apply();
-        return livenessAnalysis.apply();
+        return ra.apply();
     }
 }
