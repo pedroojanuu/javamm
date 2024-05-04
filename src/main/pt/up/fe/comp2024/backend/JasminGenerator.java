@@ -246,6 +246,7 @@ public class JasminGenerator {
                     .collect(Collectors.joining(NL + TAB, TAB, NL));
 
             codeTemp.append(instCode);
+//            codeTemp.append("------------------------------------").append(NL);
             for(int i = 0; i < stackSize; i++)
                 code.append(TAB).append("pop").append(NL);
             stackSize = 0;
@@ -280,18 +281,23 @@ public class JasminGenerator {
         // store value in the stack in destination
         var lhs = assign.getDest();
 
-        if (!(lhs instanceof Operand)) {
+        if (!(lhs instanceof Operand operand)) {
             throw new NotImplementedException(lhs.getClass());
         }
 
-        var operand = (Operand) lhs;
+        String incrementOrDecrement = verifyIncrementOrDecrement(assign);
+        if(incrementOrDecrement != null)
+            return incrementOrDecrement;
 
         // get register
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
 
         if(operand instanceof ArrayOperand) {
             increaseStackSize();
-            code.append("aload ").append(reg).append(NL);
+            if(reg <= 3 && reg >= 0)
+                code.append("aload_").append(reg).append(NL);
+            else
+                code.append("aload ").append(reg).append(NL);
             code.append(generators.apply(((ArrayOperand) operand).getIndexOperands().get(0)));
         }
 
@@ -304,12 +310,50 @@ public class JasminGenerator {
         } else if((assign.getTypeOfAssign().getTypeOfElement() == ElementType.INT32 ||
                    assign.getTypeOfAssign().getTypeOfElement() == ElementType.BOOLEAN) &&
                    !(operand.getType() instanceof ArrayType)) {
-            code.append("istore ").append(reg).append(NL);
-        } else
-            code.append("astore ").append(reg).append(NL);
+            if(reg <= 3 && reg >= 0)
+                code.append("istore_").append(reg).append(NL);
+            else
+                code.append("istore ").append(reg).append(NL);
+        } else{
+            if(reg <= 3 && reg >= 0)
+                code.append("astore_").append(reg).append(NL);
+            else
+                code.append("astore ").append(reg).append(NL);
+        }
 
         stackSize--;
         return code.toString();
+    }
+
+    private String verifyIncrementOrDecrement(AssignInstruction assign) {
+        if(assign.getRhs() instanceof BinaryOpInstruction rhs){
+            Operand dest = (Operand) assign.getDest();
+            Element left = (Element) rhs.getLeftOperand();
+            Element right = (Element) rhs.getRightOperand();
+            OperationType operation = rhs.getOperation().getOpType();
+
+            int numberToInc;
+
+            if(right.isLiteral() && left instanceof Operand && dest.getName().equals(((Operand) left).getName()))
+                numberToInc = Integer.parseInt(((LiteralElement) right).getLiteral());
+            else if (left.isLiteral() && right instanceof Operand && dest.getName().equals(((Operand) right).getName()))
+                numberToInc = Integer.parseInt(((LiteralElement) left).getLiteral());
+            else
+                return null;
+
+            if(operation == OperationType.SUB)
+                numberToInc = -numberToInc;
+            else if(operation != OperationType.ADD)
+                return null;
+
+            int reg = currentMethod.getVarTable().get(dest.getName()).getVirtualReg();
+
+            if(numberToInc >= -128 && numberToInc <= 127) {
+                return "iinc " + reg + " " + Integer.toString(numberToInc) + NL;
+            }
+        }
+        return null;
+
     }
 
     private String generateSingleOp(SingleOpInstruction singleOp) {
@@ -318,26 +362,53 @@ public class JasminGenerator {
 
     private String generateLiteral(LiteralElement literal) {
         increaseStackSize();
-        return "ldc " + literal.getLiteral() + NL;
+        int parsedInt;
+        try {
+            parsedInt = Integer.parseInt(literal.getLiteral());
+        } catch (NumberFormatException e) {
+            return "ldc " + literal.getLiteral() + NL;
+        }
+
+        if (parsedInt == -1)
+            return "iconst_m1" + NL;
+        else if (parsedInt >= 0 && parsedInt <= 5)
+            return "iconst_" + literal.getLiteral() + NL;
+        else if(parsedInt >= -128 && parsedInt <= 127)
+            return "bipush " + literal.getLiteral() + NL;
+        else if(parsedInt >= -32768 && parsedInt <= 32767)
+            return "sipush " + literal.getLiteral() + NL;
+        else
+            return "ldc " + literal.getLiteral() + NL;
     }
 
     private String generateOperand(Operand operand) {
         // get register
         increaseStackSize();
         var reg = currentMethod.getVarTable().get(operand.getName()).getVirtualReg();
-        if(operand instanceof ArrayOperand) {
+        if (operand instanceof ArrayOperand) {
             ArrayOperand arrayOperand = (ArrayOperand) operand;
-            String code = "aload " + reg + NL +
-                          generators.apply(arrayOperand.getIndexOperands().get(0))  +
-                          "iaload" + NL;
+            String code;
+            if (reg <= 3 && reg >= 0)
+                code = "aload_" + reg + NL;
+            else
+                code = "aload " + reg + NL;
+            code += generators.apply(arrayOperand.getIndexOperands().get(0)) +
+                    "iaload" + NL;
             increaseStackSize();
             stackSize -= 2;
             return code;
-        }else if(operand.getType().getTypeOfElement() == ElementType.INT32 ||
-                operand.getType().getTypeOfElement() == ElementType.BOOLEAN)
-            return "iload " + reg + NL;
-        else
-            return "aload " + reg + NL;
+        } else if (operand.getType().getTypeOfElement() == ElementType.INT32 ||
+                operand.getType().getTypeOfElement() == ElementType.BOOLEAN) {
+            if (reg <= 3 && reg >= 0)
+                return "iload_" + reg + NL;
+            else
+                return "iload " + reg + NL;
+        } else {
+            if (reg <= 3 && reg >= 0)
+                return "aload_" + reg + NL;
+            else
+                return "aload " + reg + NL;
+        }
     }
 
     private String generateBinaryOp(BinaryOpInstruction binaryOp) {
@@ -368,6 +439,41 @@ public class JasminGenerator {
                         "lessBranch" + Integer.toString(numLessThan) + ":" + NL +
                         "iconst_1" + NL +
                         "endLessBranch" + Integer.toString(numLessThan) + ":";
+            case GTH -> "isub" + NL +
+                        "ifgt greaterBranch" + Integer.toString(++numLessThan) + NL +
+                        "iconst_0" + NL +
+                        "goto endGreaterBranch" + Integer.toString(numLessThan) + NL +
+                        "greaterBranch" + Integer.toString(numLessThan) + ":" + NL +
+                        "iconst_1" + NL +
+                        "endGreaterBranch" + Integer.toString(numLessThan) + ":";
+            case EQ -> "isub" + NL +
+                       "ifeq equalBranch" + Integer.toString(++numLessThan) + NL +
+                        "iconst_0" + NL +
+                        "goto endEqualBranch" + Integer.toString(numLessThan) + NL +
+                        "equalBranch" + Integer.toString(numLessThan) + ":" + NL +
+                        "iconst_1" + NL +
+                        "endEqualBranch" + Integer.toString(numLessThan) + ":";
+            case NEQ -> "isub" + NL +
+                        "ifne notEqualBranch" + Integer.toString(++numLessThan) + NL +
+                        "iconst_0" + NL +
+                        "goto endNotEqualBranch" + Integer.toString(numLessThan) + NL +
+                        "notEqualBranch" + Integer.toString(numLessThan) + ":" + NL +
+                       "iconst_1" + NL +
+                        "endNotEqualBranch:";
+            case LTE -> "isub" + NL +
+                        "ifle lessEqualBranch" + Integer.toString(++numLessThan) + NL +
+                        "iconst_0" + NL +
+                        "goto endLessEqualBranch" + Integer.toString(numLessThan) + NL +
+                        "lessEqualBranch" + Integer.toString(numLessThan) + ":" + NL +
+                        "iconst_1" + NL +
+                        "endLessEqualBranch" + Integer.toString(numLessThan) + ":";
+            case GTE -> "isub" + NL +
+                        "ifge greaterEqualBranch" + Integer.toString(++numLessThan) + NL +
+                        "iconst_0" + NL +
+                        "goto endGreaterEqualBranch" + Integer.toString(numLessThan) + NL +
+                        "greaterEqualBranch" + Integer.toString(numLessThan) + ":" + NL +
+                        "iconst_1" + NL +
+                        "endGreaterEqualBranch" + Integer.toString(numLessThan) + ":";
             default -> throw new NotImplementedException(binaryOp.getOperation().getOpType());
         };
 
@@ -384,7 +490,10 @@ public class JasminGenerator {
         if(unaryOp.getOperation().getOpType() == OperationType.NOT ||
                 unaryOp.getOperation().getOpType() == OperationType.NOTB) {
             code.append(generators.apply(unaryOp.getOperand()));
-            code.append("ineg").append(NL);
+            code.append("iconst_1").append(NL);
+            increaseStackSize();
+            code.append("ixor").append(NL);
+            stackSize--;
         }
 
         return code.toString();
@@ -434,10 +543,11 @@ public class JasminGenerator {
             return code.toString();
         }
 
+        int valToSubtractToStackSize = 0;
         // Append code to load caller object
         if(call.getInvocationType() != CallType.invokestatic) {
             code.append(generators.apply(call.getCaller()));
-            stackSize--;
+            valToSubtractToStackSize++;
         }
 
         String argList = "";
@@ -446,7 +556,7 @@ public class JasminGenerator {
         for (var arg : call.getArguments()) {
             code.append(generators.apply(arg));
             argList += transformToJasminType((arg.getType()));
-            stackSize--;
+            valToSubtractToStackSize++;
         }
 
         if(call.getMethodNameTry().isEmpty())
@@ -476,6 +586,7 @@ public class JasminGenerator {
                 .append(returnType)
                 .append(NL);
 
+        stackSize -= valToSubtractToStackSize;
         if (call.getReturnType().getTypeOfElement() != ElementType.VOID)
             increaseStackSize();
 

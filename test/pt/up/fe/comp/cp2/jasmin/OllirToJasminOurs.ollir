@@ -1,134 +1,22 @@
-import Quicksort;
-import io;
+import ioPlus;
 
-SymbolTable extends Quicksort {
+IfWhileNested {
 
-    .field public intField.i32;
-
-    .field public boolField.bool;
-
-    .field public retValue.i32;
-
-    .field public intArray.array.i32;
-
-    .method public method1().i32 {
-
-        t1.array.i32 :=.array.i32 new(array, 3.i32).array.i32;
-        putfield(this.SymbolTable, intArray.array.i32, t1.array.i32).V;
-
-        t2.array.i32 :=.i32 getfield(this.SymbolTable, intArray.array.i32).array.i32;
-        t2[0.i32].i32 :=.i32 10.i32;
-
-        t3.array.i32 :=.i32 getfield(this.SymbolTable, intArray.array.i32).array.i32;
-        t3[1.i32].i32 :=.i32 20.i32;
-
-        t4.array.i32 :=.i32 getfield(this.SymbolTable, intArray.array.i32).array.i32;
-        t4[2.i32].i32 :=.i32 30.i32;
-
-        t5.array.i32 :=.array.i32 getfield(this.SymbolTable, intArray.array.i32).array.i32;
-        res.array.i32 :=.array.i32 invokevirtual(this.SymbolTable, "method2", t5.array.i32).array.i32;
+    .method public func(a.i32).i32 {
 
         i.i32 :=.i32 0.i32;
 
-        acc.i32 :=.i32 0.i32;
+        i.i32 :=.i32 i.i32 -.i32 0.i32;
 
-        whileCond1:
-
-            t7.i32 :=.i32 arraylength(res.array.i32).i32;
-            t8.bool :=.bool i.i32 <.bool t7.i32;
-
-        if (t8.bool) goto whileLoop1;
-        goto whileEnd1;
-
-        whileLoop1:
-
-            t9.i32 :=.i32 res[i.i32].i32;
-            acc.i32 :=.i32 acc.i32 +.i32 t9.i32;
-
-            i.i32 :=.i32 i.i32 +.i32 1.i32;
-
-        goto whileCond1;
-        whileEnd1:
-
-        boolLocal1.bool :=.bool invokevirtual(this.SymbolTable, "equals", acc.i32, 2.i32).bool;
-
-
-        if (boolLocal1.bool) goto if2;
-
-            retValue.i32 :=.i32 0.i32;
-
-        goto endif2;
-
-        if2:
-
-            retValue.i32 :=.i32 1.i32;
-
-        endif2:
-
-        ret.i32 retValue.i32;
-
-    }
-
-    .method public method2(intArray.array.i32).array.i32 {
-
-        t1.i32 :=.i32 arraylength($1.intArray.array.i32).i32;
-        returnArray.array.i32 :=.array.i32 new(array, t1.i32).array.i32;
-
-        i.i32 :=.i32 0.i32;
-
-        whileCond1:
-
-            t3.i32 :=.i32 arraylength($1.intArray.array.i32).i32;
-            t4.bool :=.bool i.i32 <.bool t3.i32;
-
-        if (t4.bool) goto whileLoop1;
-        goto whileEnd1;
-
-        whileLoop1:
-
-            t5.i32 :=.i32 $1.intArray[i.i32].i32;
-            t6.bool :=.bool t5.i32 <.bool 30.i32;
-
-            if (t6.bool) goto if2;
-
-                returnArray[i.i32].i32 :=.i32 0.i32;
-
-            goto endif2;
-
-            if2:
-
-                returnArray[i.i32].i32 :=.i32 1.i32;
-
-            endif2:
-
-            i.i32 :=.i32 i.i32 +.i32 1.i32;
-
-        goto whileCond1;
-        whileEnd1:
-
-        ret.array.i32 returnArray.array.i32;
-
-    }
-
-    .method public equals(a.i32, b.i32).bool {
-
-        t1.bool :=.bool $1.a.i32 <.bool $2.b.i32;
-        t2.bool :=.bool !.bool t1.bool;
-        t3.bool :=.bool $2.b.i32 <.bool $1.a.i32;
-        t4.bool :=.bool !.bool t3.bool;
-        t5.bool :=.bool t2.bool &&.bool t4.bool;
-
-        ret.bool t5.bool;
+        ret.i32 i.i32;
 
     }
 
     .method public static main(args.array.String).V {
-
         ret.V;
-
     }
 
-    .construct SymbolTable().V {
+    .construct IfWhileNested().V {
         invokespecial(this, "<init>").V;
     }
 }
