@@ -7,6 +7,7 @@ public class RegisterAllocation {
 
     }
     public OllirResult apply() {
+
         return null;
     }
 }
