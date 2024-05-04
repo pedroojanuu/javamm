@@ -1,10 +1,12 @@
 package pt.up.fe.comp2024.optimization;
 
+import org.specs.comp.ollir.parser.OllirParser;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.ollir.JmmOptimization;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp2024.optimization.ast.ConstantFolding;
 import pt.up.fe.comp2024.optimization.ast.ConstantPropagation;
+import pt.up.fe.comp2024.optimization.ollir.RegisterOptimization;
 
 import java.util.Collections;
 
@@ -38,9 +40,30 @@ public class JmmOptimizationImpl implements JmmOptimization {
 
     @Override
     public OllirResult optimize(OllirResult ollirResult) {
-
         //TODO: Do your OLLIR-based optimizations here
+        int registerNumberOption = Integer.parseInt(ollirResult.getConfig().getOrDefault("registerAllocation", "-1"));
 
-        return ollirResult;
+        if (registerNumberOption == -1) {
+            return ollirResult;
+        }
+
+        RegisterOptimization registerOptimization = new RegisterOptimization(ollirResult);
+        if (registerNumberOption == 0) {   // as few local registers as possible
+            return registerOptimization.apply(); // TODO
+        }
+        // limit local registers to registerNumberOption: this can result in an abort if the number of registers is not enough
+        // TODO
+
+
+        /*
+        generators
+        apply generator to ollirResult.getClass()
+        method -> do currentMethod = ...
+        see variable assignment inside method -> do def[currentMethod].append(variable) ?
+        see variable usage inside method -> do use[currentMethod].append(variable) ?
+         */
+        //ollirResult.getConfig().get("")
+        // return registerOptimization.apply();
+        return registerOptimization.apply();
     }
 }
