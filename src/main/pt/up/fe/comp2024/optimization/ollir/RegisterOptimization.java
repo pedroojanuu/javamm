@@ -13,14 +13,10 @@ public class RegisterOptimization {
     List<Report> reports;
     private final FunctionClassMap<TreeNode, String> handlers;
     OllirResult ollirResult;
-    String code;
 
     // using sets to prevent duplicates (e.g.: b = a + a)
     private final List<Set<String>> usedVariables = new ArrayList<>();
     private final List<Set<String>> definedVariables = new ArrayList<>();
-
-    private final HashMap<String, List<List<String>>> in = new HashMap<>();
-    private final HashMap<String, List<List<String>>> out = new HashMap<>();
 
     Method currentMethod;
 
@@ -31,30 +27,45 @@ public class RegisterOptimization {
         handlers = new FunctionClassMap<>();
         reports = new ArrayList<>();
 
-        handlers.put(ClassUnit.class, this::handleClassUnit);
         handlers.put(Method.class, this::handleMethod);
         handlers.put(AssignInstruction.class, this::handleAssign);
+        handlers.put(SingleOpInstruction.class, this::handleSingleOp);
+        handlers.put(LiteralElement.class, this::handleLiteral);
+        handlers.put(Operand.class, this::handleOperand);
+        handlers.put(BinaryOpInstruction.class, this::handleBinaryOp);
+        handlers.put(UnaryOpInstruction.class, this::handleUnaryOp);
+        handlers.put(ReturnInstruction.class, this::handleReturn);
+        handlers.put(CallInstruction.class, this::handleCall);
+        handlers.put(PutFieldInstruction.class, this::handlePutField);
+        handlers.put(GetFieldInstruction.class, this::handleGetField);
 
-        /*
-        generators.put(ClassUnit.class, this::generateClassUnit);
-        generators.put(Method.class, this::generateMethod);
-        generators.put(AssignInstruction.class, this::generateAssign);
-        generators.put(SingleOpInstruction.class, this::generateSingleOp);
-        generators.put(LiteralElement.class, this::generateLiteral);
-        generators.put(Operand.class, this::generateOperand);
-        generators.put(BinaryOpInstruction.class, this::generateBinaryOp);
-        generators.put(UnaryOpInstruction.class, this::generateUnaryOp);
-        generators.put(ReturnInstruction.class, this::generateReturn);
-        generators.put(CallInstruction.class, this::generateCall);
-        generators.put(PutFieldInstruction.class, this::generatePutField);
-        generators.put(GetFieldInstruction.class, this::generateGetField);
-        generators.put(Field.class, this::generateField);
-         */
+        // imports, fields, ... are not necessary here
     }
-    private String handleClassUnit(ClassUnit classUnit) {
-        for (var method : classUnit.getMethods()) {
-            handlers.apply(method);
+    private String handleGetField(GetFieldInstruction getFieldInstruction) {
+        Element object = getFieldInstruction.getObject();
+        handlers.apply(object);
+        return null;
+    }
+    private String handleCall(CallInstruction callInstruction) {
+        for (var arg : callInstruction.getArguments()) {
+            handlers.apply(arg);
         }
+        return null;
+    }
+    private String handleUnaryOp(UnaryOpInstruction unaryOpInstruction) {
+        Element operand = unaryOpInstruction.getOperand();
+        handlers.apply(operand);
+        return null;
+    }
+    private String handleOperand(Operand operand) {
+        return null;
+    }
+    private String handleSingleOp(SingleOpInstruction singleOpInstruction) {
+        Element operand = singleOpInstruction.getSingleOperand();
+        handlers.apply(operand);
+        return null;
+    }
+    private String handleLiteral(LiteralElement literalElement) {
         return null;
     }
     private String handleMethod(Method method) {
@@ -102,13 +113,23 @@ public class RegisterOptimization {
         handlers.apply(right);
         return null;
     }
-    private String defaultGenerator(TreeNode node) {
-
-        return "";
+    private String handleReturn(ReturnInstruction returnInstruction) {
+        Element returnOperand = returnInstruction.getOperand();
+        handlers.apply(returnOperand);
+        return null;
+    }
+    private String handlePutField(PutFieldInstruction putFieldInstruction) {
+        Element object = putFieldInstruction.getObject();
+        Element value = putFieldInstruction.getValue();
+        handlers.apply(object);
+        handlers.apply(value);
+        return null;
     }
     public OllirResult apply() {
-        String code = handlers.apply(ollirResult.getOllirClass());
-        return new OllirResult(code, ollirResult.getConfig());
-        // return new OllirResult(null, Collections.emptyMap());
+        // perform optimizations for each method (independently)
+        for (Method method : ollirResult.getOllirClass().getMethods()) {
+            handlers.apply(method);
+        }
+        return ollirResult;
     }
 }
