@@ -31,6 +31,7 @@ public class RegisterOptimization {
         handlers.put(AssignInstruction.class, this::handleAssign);
         handlers.put(SingleOpInstruction.class, this::handleSingleOp);
         handlers.put(LiteralElement.class, this::handleLiteral);
+        handlers.put(ArrayOperand.class, this::handleArrayOperand);
         handlers.put(Operand.class, this::handleOperand);
         handlers.put(BinaryOpInstruction.class, this::handleBinaryOp);
         handlers.put(UnaryOpInstruction.class, this::handleUnaryOp);
@@ -40,6 +41,17 @@ public class RegisterOptimization {
         handlers.put(GetFieldInstruction.class, this::handleGetField);
 
         // imports, fields, ... are not necessary here
+    }
+    private void addToUseSet(Element element) {
+        if (element instanceof Operand operand) {
+            usedVariables.get(instr_nr).add(operand.getName());
+        }
+    }
+    private String handleArrayOperand(ArrayOperand arrayOperand) {
+        String arrayOperandName = arrayOperand.getName();
+        List<Element> indexOperands = arrayOperand.getIndexOperands();
+        indexOperands.forEach(handlers::apply);
+        return null;
     }
     private String handleGetField(GetFieldInstruction getFieldInstruction) {
         Element object = getFieldInstruction.getObject();
@@ -115,7 +127,10 @@ public class RegisterOptimization {
     }
     private String handleReturn(ReturnInstruction returnInstruction) {
         Element returnOperand = returnInstruction.getOperand();
-        handlers.apply(returnOperand);
+        System.out.println("Return: " + returnOperand);
+        if (returnOperand != null) {
+            handlers.apply(returnOperand);
+        }
         return null;
     }
     private String handlePutField(PutFieldInstruction putFieldInstruction) {
@@ -125,10 +140,51 @@ public class RegisterOptimization {
         handlers.apply(value);
         return null;
     }
+
+    private LivenessAnalysisResult performLivenessAnalysis() {
+        List<Set<String>> liveIn = new ArrayList<>(), liveOut = new ArrayList<>();
+        int nrInstructions = currentMethod.getInstructions().size();
+        for (int i = 0; i < nrInstructions; i++) {
+            liveIn.add(new HashSet<>());
+            liveOut.add(new HashSet<>());
+        }
+        List<Set<String>> prevLiveIn, prevLiveOut;
+        do {
+            prevLiveIn = new ArrayList<>(liveIn);
+            prevLiveOut = new ArrayList<>(liveOut);
+            for (int i = 0; i < nrInstructions; i++) {
+                Set<String> instrLiveIn = liveIn.get(i);
+                Set<String> instrLiveOut = liveOut.get(i);
+                Set<String> instrUsed = usedVariables.get(i);
+                Set<String> instrDefined = definedVariables.get(i);
+                Set<Integer> instrSuccessors = new HashSet<>(); // TODO: actually get the successors
+
+                // instrLiveIn = instrUsed U (instrLiveOut - instrDefined)
+                instrLiveIn.clear();
+                instrLiveIn.addAll(Set.copyOf(instrLiveOut));
+                instrLiveIn.removeAll(instrDefined);
+                instrLiveIn.addAll(instrUsed);
+
+                // instrLiveOut = U { s in instrSuccessors } liveIn[s]
+                for (Integer successor : instrSuccessors) {
+                    instrLiveOut.addAll(liveIn.get(successor));
+                }
+            }
+        } while(!liveIn.equals(prevLiveIn) || !liveOut.equals(prevLiveOut));    // repeat until liveIn and liveOut don't change
+
+        return new LivenessAnalysisResult(liveIn, liveOut);
+    }
     public OllirResult apply() {
-        // perform optimizations for each method (independently)
         for (Method method : ollirResult.getOllirClass().getMethods()) {
+            // perform optimizations (register allocation) for each method (independently)
             handlers.apply(method);
+            LivenessAnalysisResult livenessAnalysisResult = this.performLivenessAnalysis();
+
+            System.out.println("Method: " + method.getMethodName());
+            System.out.println("Used: " + usedVariables);
+            System.out.println("Defined: " + definedVariables);
+
+            System.out.println(livenessAnalysisResult);
         }
         return ollirResult;
     }
