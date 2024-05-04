@@ -61,6 +61,8 @@ public class GraphColoring {
         // repeat until no nodes in the graph
         // if there is no node with less than registerNumberLimit edges, then the algorithm fails (TODO: do the best coloring possible when -r = ...)
 
+        Graph graphCopy = graph.copy();
+
         Stack<String> stack = new Stack<>();
         while (!graph.getNodes().isEmpty()) {
             String node = null;
@@ -78,10 +80,11 @@ public class GraphColoring {
             graph.removeNode(node);
         }
 
+        graph = graphCopy;
+
         Map<String, Integer> colors = new HashMap<>();
         while (!stack.isEmpty()) {
             String node = stack.pop();
-
             Set<Integer> adjacentNodeColors = new HashSet<>();  // list of colors of adjacent nodes
             for (String neighbor : graph.getAdjacentNodes(node)) {
                 adjacentNodeColors.add(colors.get(neighbor));   // returns null for nodes without color

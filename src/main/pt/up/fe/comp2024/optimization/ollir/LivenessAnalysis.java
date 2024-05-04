@@ -15,12 +15,12 @@ public class LivenessAnalysis {
     OllirResult ollirResult;
 
     // using sets to prevent duplicates (e.g.: b = a + a)
-    private final List<Set<String>> usedVariables = new ArrayList<>();
-    private final List<Set<String>> definedVariables = new ArrayList<>();
+    private final List<Set<String>> usedVariables = new ArrayList<>();      // for each instruction, the variables used
+    private final List<Set<String>> definedVariables = new ArrayList<>();   // for each instr., the vars defined
+    private final List<Set<Integer>> successors = new ArrayList<>();        // for each instr., its successor instr.'s
 
     Method currentMethod;
-
-    int instr_nr;
+    int instructionNumber;
 
     public LivenessAnalysis(OllirResult ollirResult) {
         this.ollirResult = ollirResult;
@@ -42,10 +42,8 @@ public class LivenessAnalysis {
 
         // imports, fields, ... are not necessary here
     }
-    private void addToUseSet(Element element) {
-        if (element instanceof Operand operand) {
-            usedVariables.get(instr_nr).add(operand.getName());
-        }
+    private void addVariableToUse(String varName) {
+        usedVariables.get(instructionNumber).add(varName);
     }
     private String handleArrayOperand(ArrayOperand arrayOperand) {
         String arrayOperandName = arrayOperand.getName();
@@ -70,6 +68,8 @@ public class LivenessAnalysis {
         return null;
     }
     private String handleOperand(Operand operand) {
+        String varName = operand.getName();
+        addVariableToUse(varName);
         return null;
     }
     private String handleSingleOp(SingleOpInstruction singleOpInstruction) {
@@ -78,41 +78,48 @@ public class LivenessAnalysis {
         return null;
     }
     private String handleLiteral(LiteralElement literalElement) {
+        // no need to handle constants (e.g. 5 or true)
         return null;
     }
     private String handleMethod(Method method) {
         currentMethod = method;
-        String methodName = method.getMethodName();
         List<Instruction> instructions = method.getInstructions();
 
         usedVariables.clear();
         definedVariables.clear();
+        successors.clear();
 
         for (int i = 0; i < instructions.size(); i++) {
             usedVariables.add(new HashSet<>());
             definedVariables.add(new HashSet<>());
+            successors.add(new HashSet<>());
         }
 
-        for (instr_nr = 0; instr_nr < instructions.size(); instr_nr++) {
-            Instruction instruction = instructions.get(instr_nr);
-            Set<String> used = usedVariables.get(instr_nr);
-            Set<String> defined = definedVariables.get(instr_nr);
+        for (instructionNumber = 0; instructionNumber < instructions.size(); instructionNumber++) {
+            Instruction instruction = instructions.get(instructionNumber);
+
+            if (instructionNumber < instructions.size() - 1) {  // not last instruction
+                // TODO: consider GOTOs
+                successors.get(instructionNumber).add(instructionNumber + 1);
+            }
+
             handlers.apply(instruction);
         }
 
         return null;
     }
     private String handleAssign(AssignInstruction assignInstruction) {
-        var currentMethodName = currentMethod.getMethodName();
-
         var lhs = assignInstruction.getDest();
         if (!(lhs instanceof Operand lhsOperand)) {
-            throw new NotImplementedException(lhs.getClass());
+            throw new NotImplementedException(lhs.getClass());  // arrays
         }
-        // Set<String> used = usedVariables.get(instr_nr);
-        Set<String> defined = definedVariables.get(instr_nr);
+        if (lhsOperand.isParameter()) { // parameters have their own registers
+            return null;
+        }
 
+        Set<String> defined = definedVariables.get(instructionNumber);
         defined.add(lhsOperand.getName());
+
         handlers.apply(assignInstruction.getRhs());
 
         return null;
@@ -127,17 +134,19 @@ public class LivenessAnalysis {
     }
     private String handleReturn(ReturnInstruction returnInstruction) {
         Element returnOperand = returnInstruction.getOperand();
-        System.out.println("Return: " + returnOperand);
-        if (returnOperand != null) {
+        if (returnOperand != null) {    // methods can have no return
             handlers.apply(returnOperand);
         }
         return null;
     }
     private String handlePutField(PutFieldInstruction putFieldInstruction) {
+        // do fields count towards liveness and registers?
+        /*
         Element object = putFieldInstruction.getObject();
         Element value = putFieldInstruction.getValue();
         handlers.apply(object);
         handlers.apply(value);
+         */
         return null;
     }
 
@@ -146,27 +155,33 @@ public class LivenessAnalysis {
         System.out.println("Method: " + method.getMethodName());
         System.out.println("Used: " + usedVariables);
         System.out.println("Defined: " + definedVariables);
+        System.out.println("Successors: " + successors);
 
         List<Set<String>> liveIn = new ArrayList<>(), liveOut = new ArrayList<>();
-        int nrInstructions = currentMethod.getInstructions().size();
+        int nrInstructions = successors.size();
         for (int i = 0; i < nrInstructions; i++) {
             liveIn.add(new HashSet<>());
             liveOut.add(new HashSet<>());
         }
         List<Set<String>> prevLiveIn, prevLiveOut;
         do {
-            prevLiveIn = new ArrayList<>(liveIn);
-            prevLiveOut = new ArrayList<>(liveOut);
+            prevLiveIn = new ArrayList<>();     // copy liveIn
+            prevLiveOut = new ArrayList<>();    // copy of liveOut
+            for (int i = 0; i < nrInstructions; i++) {
+                prevLiveIn.add(new HashSet<>(liveIn.get(i)));
+                prevLiveOut.add(new HashSet<>(liveOut.get(i)));
+            }
+
             for (int i = 0; i < nrInstructions; i++) {
                 Set<String> instrLiveIn = liveIn.get(i);
                 Set<String> instrLiveOut = liveOut.get(i);
                 Set<String> instrUsed = usedVariables.get(i);
                 Set<String> instrDefined = definedVariables.get(i);
-                Set<Integer> instrSuccessors = new HashSet<>(); // TODO: actually get the successors
+                Set<Integer> instrSuccessors = successors.get(i);
 
                 // instrLiveIn = instrUsed U (instrLiveOut - instrDefined)
                 instrLiveIn.clear();
-                instrLiveIn.addAll(Set.copyOf(instrLiveOut));
+                instrLiveIn.addAll(instrLiveOut);
                 instrLiveIn.removeAll(instrDefined);
                 instrLiveIn.addAll(instrUsed);
 
@@ -175,6 +190,8 @@ public class LivenessAnalysis {
                     instrLiveOut.addAll(liveIn.get(successor));
                 }
             }
+            System.out.println("live in: " + liveIn + " prev: " + prevLiveIn);
+            System.out.println("live out: " + liveOut + " prev: " + prevLiveOut);
         } while(!liveIn.equals(prevLiveIn) || !liveOut.equals(prevLiveOut));    // repeat until liveIn and liveOut don't change
 
         return new LivenessAnalysisResult(liveIn, liveOut);

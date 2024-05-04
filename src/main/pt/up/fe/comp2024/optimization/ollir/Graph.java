@@ -13,6 +13,18 @@ public class Graph {
     public void addNode(String node) {
         this.edges.put(node, new HashSet<>());
     }
+    public Graph copy() {
+        Graph graphCopy = new Graph();
+        for (String node: this.edges.keySet()) {
+            graphCopy.addNode(node);
+        }
+        for (Map.Entry<String, Set<String>> edges: edges.entrySet()) {
+            for (String node: edges.getValue()) {
+                graphCopy.addBidirectionalEdge(edges.getKey(), node);    // Sets allow us to not worry about duplicates
+            }
+        }
+        return graphCopy;
+    }
 
     /**
      * Add a bidirectional edge between two nodes. Does not check if nodes exist.

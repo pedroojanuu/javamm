@@ -34,15 +34,18 @@ public class RegisterAllocation {
         Map<String, Descriptor> methodVarTable = method.getVarTable();
         for (Map.Entry<String, Integer> entry: colors.entrySet()) {
             String varName = entry.getKey();
-            int register = entry.getValue();   // the color of the variable is the register
+            int register = initialRegisterOffset + entry.getValue();   // the color of the variable is the register
+
+            System.out.println("Variable " + varName + " assigned to register " + register);
 
             Descriptor d = methodVarTable.get(varName);
-            d.setVirtualReg(initialRegisterOffset + register);
+            d.setVirtualReg(register);
         }
     }
     public OllirResult apply() {
         for (Method method: this.ollirResult.getOllirClass().getMethods()) {
             LivenessAnalysisResult liveAnalysisResult = livenessAnalysis.obtainResult(method);
+            System.out.println(liveAnalysisResult);
             Map<String, Integer> colors = graphColoring.obtainResult(liveAnalysisResult, this.numReg);
             System.out.println("Colors = " + colors);
 
@@ -57,6 +60,6 @@ public class RegisterAllocation {
                 assignRegisters(method, colors);
             }
         }
-        return null;
+        return this.ollirResult;
     }
 }
