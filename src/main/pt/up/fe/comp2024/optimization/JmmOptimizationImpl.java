@@ -1,12 +1,11 @@
 package pt.up.fe.comp2024.optimization;
 
-import org.specs.comp.ollir.parser.OllirParser;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.ollir.JmmOptimization;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp2024.optimization.ast.ConstantFolding;
 import pt.up.fe.comp2024.optimization.ast.ConstantPropagation;
-import pt.up.fe.comp2024.optimization.ollir.RegisterOptimization;
+import pt.up.fe.comp2024.optimization.ollir.LivenessAnalysis;
 
 import java.util.Collections;
 
@@ -47,9 +46,9 @@ public class JmmOptimizationImpl implements JmmOptimization {
             return ollirResult;
         }
 
-        RegisterOptimization registerOptimization = new RegisterOptimization(ollirResult);
+        LivenessAnalysis livenessAnalysis = new LivenessAnalysis(ollirResult);
         if (registerNumberOption == 0) {   // as few local registers as possible
-            return registerOptimization.apply(); // TODO
+            return livenessAnalysis.apply(); // TODO
         }
         // limit local registers to registerNumberOption: this can result in an abort if the number of registers is not enough
         // TODO
@@ -64,6 +63,6 @@ public class JmmOptimizationImpl implements JmmOptimization {
          */
         //ollirResult.getConfig().get("")
         // return registerOptimization.apply();
-        return registerOptimization.apply();
+        return livenessAnalysis.apply();
     }
 }

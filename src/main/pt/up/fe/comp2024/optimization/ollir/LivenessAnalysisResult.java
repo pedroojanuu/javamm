@@ -17,7 +17,12 @@ public class LivenessAnalysisResult {
     public Set<String> getLiveOut(int instr_nr) {
         return out.get(instr_nr);
     }
-
+    public int getLiveOutSize() {
+        return out.size();
+    }
+    public int getLiveInSize() {
+        return in.size();
+    }
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

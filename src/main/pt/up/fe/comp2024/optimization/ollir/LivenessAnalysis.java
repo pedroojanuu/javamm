@@ -9,7 +9,7 @@ import pt.up.fe.specs.util.exceptions.NotImplementedException;
 
 import java.util.*;
 
-public class RegisterOptimization {
+public class LivenessAnalysis {
     List<Report> reports;
     private final FunctionClassMap<TreeNode, String> handlers;
     OllirResult ollirResult;
@@ -22,7 +22,7 @@ public class RegisterOptimization {
 
     int instr_nr;
 
-    public RegisterOptimization(OllirResult ollirResult) {
+    public LivenessAnalysis(OllirResult ollirResult) {
         this.ollirResult = ollirResult;
         handlers = new FunctionClassMap<>();
         reports = new ArrayList<>();
