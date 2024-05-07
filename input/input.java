@@ -1,43 +1,17 @@
-import ioPlus;
-class ArrayAccess {
+import io;
 
-    public int foo(int[] a) {
-        int result;
+class Arithmetic_and {
+    public static void main(String[] args) {
+        boolean a;
+        Arithmetic_and c;
 
-//        result = a[a.length];
-//        result = a[1] + a[2];
-//        result = result + a[3];
-//        result = 1 + a[4];
+        c = new Arithmetic_and();
 
-        a[0] = 1;
-        a[1] = 2;
-        a[2] = 3;
-        a[3] = 4;
-        a[4] = 5;
-
-
-        return result;
+        a = false && true && c.p(1);
     }
 
-
+    boolean p(int value) {
+        io.print(value);
+        return true;
+    }
 }
-
-/*
-import ioPlus;
-ArrayAccess extends Object {
-
-
-.method public foo(a.array.i32).i32 {
-a[0.i32].i32 :=.i32 1.i32;
-a[1.i32].i32 :=.i32 2.i32;
-a[2.i32].i32 :=.i32 3.i32;
-a[3.i32].i32 :=.i32 4.i32;
-a[4.i32].i32 :=.i32 5.i32;
-ret.i32 result.i32;
-}
-
-.construct ArrayAccess().V {
-invokespecial(this, "").V;
-}
-}
- */

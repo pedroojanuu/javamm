@@ -79,8 +79,34 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         return new OllirExprResult(code);
     }
 
+    private OllirExprResult andOptimization(JmmNode node) {
+        StringBuilder computation = new StringBuilder();
+
+        OllirExprResult lhs = visit(node.getJmmChild(0));
+        OllirExprResult rhs = visit(node.getJmmChild(1));
+
+        String booleanOllirType = OptUtils.toOllirType(TypeUtils.getBooleanType());
+
+        computation.append(lhs.getComputation()).append(rhs.getComputation());
+
+        String temp = OptUtils.getTemp() + booleanOllirType;
+        String ifThen = OptUtils.getIfThen();
+        String ifEnd = OptUtils.getIfEnd();
+
+        computation.append("if (" + lhs.getCode() + ") goto " + ifThen + END_STMT);
+        computation.append(temp + SPACE + ASSIGN + booleanOllirType + SPACE + OptUtils.toOllirBoolean("false") + booleanOllirType + END_STMT);
+        computation.append("goto " + ifEnd + END_STMT);
+
+        computation.append(ifThen + ":\n");
+        computation.append(temp + SPACE + ASSIGN + booleanOllirType + SPACE + rhs.getCode() + END_STMT);
+
+        computation.append(ifEnd + ":\n");
+
+        return new OllirExprResult(temp, computation);
+    }
 
     private OllirExprResult visitBinExpr(JmmNode node, Void unused) {
+        if (node.get("op").equals("&&")) return andOptimization(node);
 
         var lhs = visit(node.getJmmChild(0));
         var rhs = visit(node.getJmmChild(1));
