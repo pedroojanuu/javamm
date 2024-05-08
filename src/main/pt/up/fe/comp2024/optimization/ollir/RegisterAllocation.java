@@ -17,7 +17,7 @@ public class RegisterAllocation {
     public RegisterAllocation(OllirResult ollirResult, int numReg) {
         this.ollirResult = ollirResult;
         this.livenessAnalysis = new LivenessAnalysis(ollirResult);
-        this.graphColoring = new GraphColoring();
+        this.graphColoring = new GraphColoring(numReg);
         this.numReg = numReg;
     }
 
@@ -26,10 +26,13 @@ public class RegisterAllocation {
      * Used to "report" the mapping of local variables to registers.
      */
     private void assignRegisters(Method method, Map<String, Integer> colors) {
-        // avoid register 0 (reserved for "this")
+        // avoid register 0 (reserved for "this"), in non-static methods
         // avoid parameter registers
-        // TODO: static vs non-static methods ? Should we not add 1 for static methods?
-        int initialRegisterOffset = 1 + method.getParams().size();
+
+        int initialRegisterOffset = method.getParams().size();
+        if (!method.isStaticMethod()) { // not static, reserve register 0 for "this"
+            initialRegisterOffset += 1;
+        }
 
         Map<String, Descriptor> methodVarTable = method.getVarTable();
         for (Map.Entry<String, Integer> entry: colors.entrySet()) {
@@ -46,10 +49,10 @@ public class RegisterAllocation {
         for (Method method: this.ollirResult.getOllirClass().getMethods()) {
             LivenessAnalysisResult liveAnalysisResult = livenessAnalysis.obtainResult(method);
             System.out.println(liveAnalysisResult);
-            Map<String, Integer> colors = graphColoring.obtainResult(liveAnalysisResult, this.numReg);
+            Map<String, Integer> colors = graphColoring.obtainResult(liveAnalysisResult);
             System.out.println("Colors = " + colors);
 
-            if (colors == null) {
+            if (graphColoring.isSpilled() && this.numReg != 0) {
                 this.ollirResult.getReports().add(ReportUtils.buildErrorReport(
                         Stage.OPTIMIZATION,
                         null,

@@ -39,30 +39,15 @@ public class JmmOptimizationImpl implements JmmOptimization {
 
     @Override
     public OllirResult optimize(OllirResult ollirResult) {
-        //TODO: Do your OLLIR-based optimizations here
         int registerNumberOption = Integer.parseInt(ollirResult.getConfig().getOrDefault("registerAllocation", "-1"));
 
         if (registerNumberOption == -1) {
             return ollirResult;
         }
 
+        // registerNumberOption == 0 -> as few local registers as possible
+        // else limit local registers to registerNumberOption: this can result in an abort if the number of registers is not enough
         RegisterAllocation ra = new RegisterAllocation(ollirResult, registerNumberOption);
-        if (registerNumberOption == 0) {   // as few local registers as possible
-            return ra.apply(); // TODO
-        }
-        // limit local registers to registerNumberOption: this can result in an abort if the number of registers is not enough
-        // TODO
-
-
-        /*
-        generators
-        apply generator to ollirResult.getClass()
-        method -> do currentMethod = ...
-        see variable assignment inside method -> do def[currentMethod].append(variable) ?
-        see variable usage inside method -> do use[currentMethod].append(variable) ?
-         */
-        //ollirResult.getConfig().get("")
-        // return registerOptimization.apply();
         return ra.apply();
     }
 }

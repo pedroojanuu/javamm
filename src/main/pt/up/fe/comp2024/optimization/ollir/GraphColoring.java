@@ -3,8 +3,12 @@ package pt.up.fe.comp2024.optimization.ollir;
 import java.util.*;
 
 public class GraphColoring {
+    private final int registerNumberLimit;
+    private boolean isSpilled = false;
 
-    public GraphColoring() {}
+    public GraphColoring(int registerNumberLimit) {
+        this.registerNumberLimit = registerNumberLimit;
+    }
 
     private Map<String, List<Integer>> getLiveInstructions(LivenessAnalysisResult livenessAnalysisResult) {
         Map<String, List<Integer>> liveRanges = new HashMap<>();
@@ -44,7 +48,7 @@ public class GraphColoring {
         }
         return g;
     }
-    private Map<String, Integer> colorGraph(Graph graph, int registerNumberLimit) {
+    private Map<String, Integer> colorGraph(Graph graph) {
         // heuristic algorithm to color the graph (https://docs.google.com/document/d/1OscYt8qOFkfc3xaxdPf-jOsozejf4JvXF9Z1BsOU2x8/edit?usp=sharing)
 
         // nodes: variables
@@ -63,6 +67,8 @@ public class GraphColoring {
 
         Graph graphCopy = graph.copy();
 
+        List<String> nodesSpilled = new ArrayList<>();
+
         Stack<String> stack = new Stack<>();
         while (!graph.getNodes().isEmpty()) {
             String node = null;
@@ -72,12 +78,23 @@ public class GraphColoring {
                     break;
                 }
             }
-            if (node == null) { // no node with less than registerNumberLimit edges
-                return null;
-            }
 
-            stack.push(node);
-            graph.removeNode(node);
+            if (node == null) { // no node with less than registerNumberLimit edges
+                // select node with the least edges
+                String nodeWithLeastEdges = null;
+                for (String n: graph.getNodes()) {
+                    if (nodeWithLeastEdges == null
+                            || graph.getAdjacentNodes(n).size() < graph.getAdjacentNodes(nodeWithLeastEdges).size()) {
+                        nodeWithLeastEdges = n;
+                    }
+                }
+                nodesSpilled.add(nodeWithLeastEdges);
+                graph.removeNode(nodeWithLeastEdges);
+            }
+            else {
+                stack.push(node);
+                graph.removeNode(node);
+            }
         }
 
         graph = graphCopy;
@@ -100,14 +117,31 @@ public class GraphColoring {
             colors.put(node, color);
         }
 
+        isSpilled = !nodesSpilled.isEmpty();
+        for (String node: nodesSpilled) {
+            // find a color not used by neighbors or the smallest color not used
+            Set<Integer> adjacentNodeColors = new HashSet<>();  // list of colors of adjacent nodes
+            for (String neighbor : graph.getAdjacentNodes(node)) {
+                adjacentNodeColors.add(colors.get(neighbor));   // returns null for nodes without color
+            }
+            int color = 0;
+            while (adjacentNodeColors.contains(color)) {
+                color++;
+            }
+            colors.put(node, color);
+        }
+
         // each color will be register
-        // start from lowest register number (avoiding registers for "this" and parameters)
+        // start from the lowest register number (avoiding registers for "this" and parameters)
         // reverse the removal of nodes from graph (stack)
         // for each node, assign the lowest register already not attributed to popped nodes
         return colors;
     }
-    public Map<String, Integer> obtainResult(LivenessAnalysisResult livenessAnalysisResult, int registerNumberLimit) {
+    public boolean isSpilled() {
+        return isSpilled;
+    }
+    public Map<String, Integer> obtainResult(LivenessAnalysisResult livenessAnalysisResult) {
         Graph graph = this.getInterferenceGraph(livenessAnalysisResult);
-        return this.colorGraph(graph, registerNumberLimit);
+        return this.colorGraph(graph);
     }
 }

@@ -82,6 +82,7 @@ public class LivenessAnalysis {
         return null;
     }
     private String handleMethod(Method method) {
+        method.buildCFG();
         currentMethod = method;
         List<Instruction> instructions = method.getInstructions();
 
