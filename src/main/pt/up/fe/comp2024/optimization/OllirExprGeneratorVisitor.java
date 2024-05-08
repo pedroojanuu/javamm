@@ -1,14 +1,11 @@
 package pt.up.fe.comp2024.optimization;
 
-import org.specs.comp.ollir.Ollir;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
-import pt.up.fe.comp.jmm.ast.PreorderJmmVisitor;
 import pt.up.fe.comp2024.ast.TypeUtils;
-import pt.up.fe.comp2024.symboltable.SymbolTableUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,7 +63,7 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         addVisit(BOOLEAN_LITERAL_EXPR, this::visitBooleanLiteral);
         addVisit(ID_LITERAL_EXPR, this::visitVarRef);
         addVisit(THIS_EXPR, this::visitThisExpr);
-//        addVisit(ARRAY_DECL_EXPR, this::visitArrayDeclExpr);
+        addVisit(ARRAY_DECL_EXPR, this::visitArrayDeclExpr);
 
         setDefaultVisit(this::defaultVisit);
     }
@@ -428,6 +425,32 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         computation.append("!.bool " + childVisit.getCode() + END_STMT);
 
         return new OllirExprResult(temp + type, computation);
+    }
+
+    private OllirExprResult visitArrayDeclExpr(JmmNode node, Void unused) {
+        StringBuilder computation = new StringBuilder();
+
+        String intOllirType = OptUtils.toOllirType(TypeUtils.getIntType());
+        String intArrayOllirType = OptUtils.toOllirType(TypeUtils.getIntArrayType());
+
+        String size = String.valueOf(node.getNumChildren()) + intOllirType;
+        String temp = OptUtils.getTemp() + intArrayOllirType;
+        String varArgsArray = OptUtils.getVarArgsArray() + intArrayOllirType;
+
+        computation.append(temp + SPACE + ASSIGN + intArrayOllirType
+        + " new(array, " + size + ")" + intArrayOllirType + END_STMT);
+
+        computation.append(varArgsArray + SPACE + ASSIGN + intArrayOllirType + SPACE + temp + END_STMT);
+
+        for (int i = 0; i < node.getNumChildren(); i++) {
+            OllirExprResult childVisit = visit(node.getChild(i));
+            computation.append(childVisit.getComputation());
+
+            computation.append(varArgsArray + "[" + String.valueOf(i) + intOllirType + "]"
+            + intOllirType + SPACE + ASSIGN + intOllirType + SPACE + childVisit.getCode() + END_STMT);
+        }
+
+        return new OllirExprResult(varArgsArray, computation);
     }
 
     /**
