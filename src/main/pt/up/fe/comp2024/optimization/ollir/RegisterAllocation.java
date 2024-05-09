@@ -35,6 +35,7 @@ public class RegisterAllocation {
         }
 
         Map<String, Descriptor> methodVarTable = method.getVarTable();
+        System.out.println("method: " + methodVarTable);
         for (Map.Entry<String, Integer> entry: colors.entrySet()) {
             String varName = entry.getKey();
             int register = initialRegisterOffset + entry.getValue();   // the color of the variable is the register

@@ -21,6 +21,7 @@ public class LivenessAnalysis {
 
     Method currentMethod;
     int instructionNumber;
+    private Map<String, Descriptor> descriptors;
 
     public LivenessAnalysis(OllirResult ollirResult) {
         this.ollirResult = ollirResult;
@@ -40,13 +41,36 @@ public class LivenessAnalysis {
         handlers.put(PutFieldInstruction.class, this::handlePutField);
         handlers.put(GetFieldInstruction.class, this::handleGetField);
 
-        // imports, fields, ... are not necessary here
+        handlers.put(GotoInstruction.class, this::handleGoto);
+
+        // handlers.put(CondBranchInstruction.class, this::handleCondBranch);
+            // handlers.put(SingleOpCondInstruction.class, this::handleSingleOp);
+            // handlers.put(OpCondInstruction.class, this::handleOpCond);
     }
     private void addVariableToUse(String varName) {
-        usedVariables.get(instructionNumber).add(varName);
+        if (descriptors.get(varName) != null) {
+            usedVariables.get(instructionNumber).add(varName);
+        }
+    }
+
+    private String handleGoto(GotoInstruction gotoInstruction) {
+        int successorIndex = currentMethod.getInstructions().indexOf(currentMethod.getLabels().get(gotoInstruction.getLabel()));
+        successors.get(instructionNumber).add(successorIndex);
+        return null;
+    }
+    private String handleCondBranch(CondBranchInstruction condBranchInstruction) {
+        /*
+        Element left = condBranchInstruction.getLeftOperand();
+        Element right = condBranchInstruction.getRightOperand();
+
+        handlers.apply(left);
+        handlers.apply(right);
+        */
+        return null;
     }
     private String handleArrayOperand(ArrayOperand arrayOperand) {
         String arrayOperandName = arrayOperand.getName();
+        addVariableToUse(arrayOperandName);
         List<Element> indexOperands = arrayOperand.getIndexOperands();
         indexOperands.forEach(handlers::apply);
         return null;
@@ -57,6 +81,7 @@ public class LivenessAnalysis {
         return null;
     }
     private String handleCall(CallInstruction callInstruction) {
+        handlers.apply(callInstruction.getCaller());
         for (var arg : callInstruction.getArguments()) {
             handlers.apply(arg);
         }
@@ -68,6 +93,7 @@ public class LivenessAnalysis {
         return null;
     }
     private String handleOperand(Operand operand) {
+        System.out.println("Operand name: " + operand.getName());
         String varName = operand.getName();
         addVariableToUse(varName);
         return null;
@@ -84,6 +110,8 @@ public class LivenessAnalysis {
     private String handleMethod(Method method) {
         method.buildCFG();
         currentMethod = method;
+        descriptors = method.getVarTable();
+
         List<Instruction> instructions = method.getInstructions();
 
         usedVariables.clear();
@@ -100,7 +128,6 @@ public class LivenessAnalysis {
             Instruction instruction = instructions.get(instructionNumber);
 
             if (instructionNumber < instructions.size() - 1) {  // not last instruction
-                // TODO: consider GOTOs
                 successors.get(instructionNumber).add(instructionNumber + 1);
             }
 
@@ -111,18 +138,25 @@ public class LivenessAnalysis {
     }
     private String handleAssign(AssignInstruction assignInstruction) {
         var lhs = assignInstruction.getDest();
+        Set<String> defined = definedVariables.get(instructionNumber);
         if (!(lhs instanceof Operand lhsOperand)) {
-            throw new NotImplementedException(lhs.getClass());  // arrays
+            // this should be impossible
+            throw new NotImplementedException("AssignInstruction with non-Operand lhs");
         }
         if (lhsOperand.isParameter()) { // parameters have their own registers
             return null;
         }
 
-        Set<String> defined = definedVariables.get(instructionNumber);
         defined.add(lhsOperand.getName());
+        if (lhsOperand instanceof ArrayOperand arrayOperand) {   // handle array assignments
+            // add array to defined variables (already done)
+            // add others in lhs to used variables
+            for (var indexOperand : arrayOperand.getIndexOperands()) {
+                handlers.apply(indexOperand);
+            }
+        }
 
         handlers.apply(assignInstruction.getRhs());
-
         return null;
     }
     private String handleBinaryOp(BinaryOpInstruction binaryOpInstruction) {
