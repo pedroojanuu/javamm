@@ -1,37 +1,65 @@
 import io;
 import Quicksort;
-import java.util.List;
 
 class SymbolTable extends Quicksort {
 
-	int intField;
-	boolean boolField;
-	List listField;
+    int intField;
+    boolean boolField;
+    int retValue;
+    int[] intArray;
 
-	public int method1() {
-	    int intLocal1;
-	    boolean boolLocal1;
-
-		intLocal1 = 0 + 10 - 1 * 5 / (3+9);
-		boolLocal1 = true;
-		listField = new List();
-
-		return 0;
-	}
-
-	public boolean method2(int intParam1, boolean boolParam1) {
+    public int method1() {
+        int[] res;
+        int retValue;
+        int i;
+        int acc;
         boolean boolLocal1;
-        boolLocal1 = (1 < 2) && (5 > 4);
 
-		return boolParam1 || boolLocal1;
-	}
+        intArray = new int[3];
+        intArray[0] = 10;
+        intArray[1] = 20;
+        intArray[2] = 30;
 
-	public int recursiveMethod(int n) {
-	    Test test = new Test();
-	    return recursiveMethod(test.foo() + Test.staticFoo());
+        res = this.method2(intArray);
+        i = 0;
+        acc = 0;
+        while (i < res.length) {
+            acc = acc + res[i];
+            i = i + 1;
+        }
+
+        boolLocal1 = this.equals(acc, 2);
+        if(boolLocal1) {
+            retValue = 1;
+        } else {
+            retValue = 0;
+        } return retValue;
     }
 
-	public static void main(String[] args) {
-	}
+    public int[] method2(int[] intArray) {
+        int i;
+        int [] returnArray;
+        boolean boolLocal1;
+        boolean retValue;
+
+        returnArray = new int[intArray.length];
+        i = 0;
+        while (i < intArray.length) {
+            if(intArray[i] < 30) {
+                returnArray[i] = 1;
+            } else {
+                returnArray[i] = 0;
+            }
+            i = i + 1;
+        }
+        return returnArray;
+    }
+
+    public boolean equals(int a, int b){
+        return !(a < b) && !(b < a);
+    }
+
+    public static void main(String[] args) {
+    }
 
 }
