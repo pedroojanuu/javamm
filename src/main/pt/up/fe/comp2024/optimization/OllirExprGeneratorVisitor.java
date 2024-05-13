@@ -224,7 +224,7 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
                 break;
             }
 
-        List<OllirExprResult> argsResult = visitParams(node, methodName);
+        List<OllirExprResult> argsResult = visitArgs(node, methodName);
 
         for (OllirExprResult argResult : argsResult)
             computation.append(argResult.getComputation());
@@ -294,7 +294,7 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
                 break;
             }
 
-        List<OllirExprResult> argsResult = visitParams(node, methodName);
+        List<OllirExprResult> argsResult = visitArgs(node, methodName);
 
         for (OllirExprResult argResult : argsResult)
             computation.append(argResult.getComputation());
@@ -424,24 +424,86 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         return new OllirExprResult(varArgsArray, computation);
     }
 
-    private List<OllirExprResult> visitParams(JmmNode node, String methodName) {
+    private List<OllirExprResult> visitArgs(JmmNode node, String calleeName) {
         List<OllirExprResult> argsResult = new ArrayList<>();
 
         if (node.getNumChildren() <= 1) return argsResult;
 
         List<JmmNode> args = node.getJmmChild(1).getChildren();
+        List<JmmNode> params = new ArrayList<>();
+        boolean hasVarargs = false;
 
-        for (int i = 0; i < args.size(); i++) {
+        if (node.getAncestor(OTHER_METHOD).isPresent()) {
+            List<JmmNode> classMethods = node.getAncestor(OTHER_METHOD).get().getParent().getChildren();
+            for (JmmNode method : classMethods) {
+                if (method.get("name").equals(calleeName)) {
+                    for (JmmNode param : method.getChildren()) {
+                        if (param.getKind().equals(PARAM.toString())) {
+                            params.add(param);
+                            if (param.get("paramType").equals(VAR_ARGS.toString())) {
+                                hasVarargs = true;
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        int i;
+
+        for (i = 0; i < params.size() - 1; i++) {
             JmmNode arg = args.get(i);
             if (arg.getKind().equals(METHOD_CALL_EXPR.toString()) && !table.getMethods().contains(arg.get("method"))) {
                 this.visitingArgImported = true;
-                this.visitingArgImportedType = table.getParameters(methodName).get(i).getType();
+                this.visitingArgImportedType = table.getParameters(calleeName).get(i).getType();
             }
             argsResult.add(visit(arg));
             this.visitingArgImported = false;
             this.visitingArgImportedType = null;
         }
 
+        if (!hasVarargs) {
+            JmmNode arg = args.getLast();
+            if (arg.getKind().equals(METHOD_CALL_EXPR.toString()) && !table.getMethods().contains(arg.get("method"))) {
+                this.visitingArgImported = true;
+                this.visitingArgImportedType = table.getParameters(calleeName).getLast().getType();
+            }
+            argsResult.add(visit(arg));
+            this.visitingArgImported = false;
+            this.visitingArgImportedType = null;
+
+            return argsResult;
+        }
+
+        StringBuilder computation = new StringBuilder();
+
+        String intOllirType = OptUtils.toOllirType(TypeUtils.getIntType());
+        String intArrayOllirType = OptUtils.toOllirType(TypeUtils.getIntArrayType());
+
+        String size = String.valueOf(args.size() - i) + intOllirType;
+        String temp = OptUtils.getTemp() + intArrayOllirType;
+        String varArgsArray = OptUtils.getVarArgsArray() + intArrayOllirType;
+
+        computation.append(temp + SPACE + ASSIGN + intArrayOllirType
+                + " new(array, " + size + ")" + intArrayOllirType + END_STMT);
+
+        computation.append(varArgsArray + SPACE + ASSIGN + intArrayOllirType + SPACE + temp + END_STMT);
+
+        int idx = 0;
+
+        for (i = i; i < args.size(); i++) {
+            OllirExprResult childVisit = visit(args.get(i));
+            computation.append(childVisit.getComputation());
+
+            computation.append(varArgsArray + "[" + idx + intOllirType + "]"
+                    + intOllirType + SPACE + ASSIGN + intOllirType + SPACE + childVisit.getCode() + END_STMT);
+
+            idx++;
+        }
+
+        argsResult.add(new OllirExprResult(varArgsArray, computation));
         return argsResult;
     }
 
