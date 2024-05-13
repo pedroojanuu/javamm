@@ -400,3 +400,4 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         return "";
     }
 }
+
