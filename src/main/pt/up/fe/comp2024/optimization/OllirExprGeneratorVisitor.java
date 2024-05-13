@@ -224,21 +224,7 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
                 break;
             }
 
-        List<OllirExprResult> argsResult = new ArrayList<>();
-
-        if (node.getChildren().size() > 1) {    // has args
-            List<JmmNode> args = node.getJmmChild(1).getChildren();
-            for (int i = 0; i < args.size(); i++) {
-                JmmNode arg = args.get(i);
-                if (arg.getKind().equals(METHOD_CALL_EXPR.toString()) && !table.getMethods().contains(arg.get("method"))) {
-                    this.visitingArgImported = true;
-                    this.visitingArgImportedType = table.getParameters(methodName).get(i).getType();
-                }
-                argsResult.add(visit(arg));
-                this.visitingArgImported = false;
-                this.visitingArgImportedType = null;
-            }
-        }
+        List<OllirExprResult> argsResult = visitParams(node, methodName);
 
         for (OllirExprResult argResult : argsResult)
             computation.append(argResult.getComputation());
@@ -308,25 +294,10 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
                 break;
             }
 
-        List<OllirExprResult> argsResult = new ArrayList<>();
-
-        if (node.getChildren().size() > 1) {    // has args
-            List<JmmNode> args = node.getJmmChild(1).getChildren();
-            for (int i = 0; i < args.size(); i++) {
-                JmmNode arg = args.get(i);
-                if (arg.getKind().equals(METHOD_CALL_EXPR.toString()) && !table.getMethods().contains(arg.get("method"))) {
-                    this.visitingArgImported = true;
-                    this.visitingArgImportedType = table.getParameters(methodName).get(i).getType();
-                }
-                argsResult.add(visit(arg));
-                this.visitingArgImported = false;
-                this.visitingArgImportedType = null;
-            }
-        }
+        List<OllirExprResult> argsResult = visitParams(node, methodName);
 
         for (OllirExprResult argResult : argsResult)
             computation.append(argResult.getComputation());
-
 
         StringBuilder invocation = new StringBuilder();
         invocation.append(invoke + "(" + objectName + ", \"" + methodName + "\"");
@@ -446,11 +417,32 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
             OllirExprResult childVisit = visit(node.getChild(i));
             computation.append(childVisit.getComputation());
 
-            computation.append(varArgsArray + "[" + String.valueOf(i) + intOllirType + "]"
+            computation.append(varArgsArray + "[" + i + intOllirType + "]"
             + intOllirType + SPACE + ASSIGN + intOllirType + SPACE + childVisit.getCode() + END_STMT);
         }
 
         return new OllirExprResult(varArgsArray, computation);
+    }
+
+    private List<OllirExprResult> visitParams(JmmNode node, String methodName) {
+        List<OllirExprResult> argsResult = new ArrayList<>();
+
+        if (node.getNumChildren() <= 1) return argsResult;
+
+        List<JmmNode> args = node.getJmmChild(1).getChildren();
+
+        for (int i = 0; i < args.size(); i++) {
+            JmmNode arg = args.get(i);
+            if (arg.getKind().equals(METHOD_CALL_EXPR.toString()) && !table.getMethods().contains(arg.get("method"))) {
+                this.visitingArgImported = true;
+                this.visitingArgImportedType = table.getParameters(methodName).get(i).getType();
+            }
+            argsResult.add(visit(arg));
+            this.visitingArgImported = false;
+            this.visitingArgImportedType = null;
+        }
+
+        return argsResult;
     }
 
     /**
