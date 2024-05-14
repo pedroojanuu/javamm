@@ -1,13 +1,15 @@
-import io;
+import B;
+class A {
 
-class Arithmetic_not {
-    public static void main(String[] args) {
-        boolean a;
+    int c;
 
-        a = !true;
-
-        io.println(a);
+    B bar() {
+        return new B();
     }
 
-
+    int a() {
+        B b;
+        b = this.bar();
+        return b.foo(1, 2*5, 54, 55);
+    }
 }

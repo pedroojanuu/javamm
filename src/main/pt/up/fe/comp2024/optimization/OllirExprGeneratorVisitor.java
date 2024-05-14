@@ -452,8 +452,9 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         }
 
         int i;
+        int thresh = !params.isEmpty() ? params.size() - 1 : args.size() - 1;
 
-        for (i = 0; i < params.size() - 1; i++) {
+        for (i = 0; i < thresh; i++) {
             JmmNode arg = args.get(i);
             if (arg.getKind().equals(METHOD_CALL_EXPR.toString()) && !table.getMethods().contains(arg.get("method"))) {
                 this.visitingArgImported = true;
@@ -482,7 +483,7 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         String intOllirType = OptUtils.toOllirType(TypeUtils.getIntType());
         String intArrayOllirType = OptUtils.toOllirType(TypeUtils.getIntArrayType());
 
-        String size = String.valueOf(args.size() - i) + intOllirType;
+        String size = args.size() - i + intOllirType;
         String temp = OptUtils.getTemp() + intArrayOllirType;
         String varArgsArray = OptUtils.getVarArgsArray() + intArrayOllirType;
 
