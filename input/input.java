@@ -1,15 +1,18 @@
-import B;
 class A {
 
-    int c;
-
-    B bar() {
-        return new B();
-    }
-
     int a() {
-        B b;
-        b = this.bar();
-        return b.foo(1, 2*5, 54, 55);
+        int[] a;
+        int b;
+        int c;
+
+        a = new int[4];
+
+        a = [0, 1, 2, 3];
+
+        b = a[1];
+
+        c = [0, 1][1];
+
+        return 0;
     }
 }
