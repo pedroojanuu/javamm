@@ -27,7 +27,7 @@ import java.util.HashMap;
  * One JasminGenerator instance per OllirResult.
  */
 public class JasminGenerator {
-    private final boolean showCode = false;
+    private final boolean showCode = true;
 
     private static final String NL = "\n";
     private static final String TAB = "   ";
@@ -240,6 +240,10 @@ public class JasminGenerator {
             interseMethodLabels.put(inst.getValue(), inst.getKey());
 
         for (var inst : method.getInstructions()) {
+            // Espreita a instrucao da frente
+            // Se inst atual for um assign, e proxima tambem, e o lado direito da proxima for igual ao laddo esquerdo do assign atual
+            // entao ativa a flag de possivel incremento e otherLeftSide = lado esquerdo da proxima instrucao
+            // Se flag ignoreInstruction estiver ativa, ignora a instrucao atual e desativa a flag
             if(interseMethodLabels.containsKey(inst))
                 codeTemp.append(interseMethodLabels.get(inst)).append(":").append(NL);
             var instCode = StringLines.getLines(generators.apply(inst)).stream()
@@ -248,7 +252,7 @@ public class JasminGenerator {
             codeTemp.append(instCode);
 //            codeTemp.append("------------------------------------").append(NL);
             for(int i = 0; i < stackSize; i++)
-                code.append(TAB).append("pop").append(NL);
+                codeTemp.append(TAB).append("pop").append(NL);
             stackSize = 0;
         }
 
@@ -334,8 +338,14 @@ public class JasminGenerator {
 
             int numberToInc;
 
-            if(right.isLiteral() && left instanceof Operand && dest.getName().equals(((Operand) left).getName()))
+            //Se flag de possivel incremento estiver ativa, testa tambem com dest = otherLeftSide
+            // Se isto for veradade, desativa a flag de possivel incremento e ativa a flag de ignorar instrucao
+
+            //if(true) throw new NotImplementedException((dest.getName().equals(((Operand) left).getName())) ? "True" : "false");
+            if(right.isLiteral() && left instanceof Operand && dest.getName().equals(((Operand) left).getName())) {
+                //if(true) throw new NotImplementedException("Increment and Decrement not implemented");
                 numberToInc = Integer.parseInt(((LiteralElement) right).getLiteral());
+            }
             else if (left.isLiteral() && right instanceof Operand && dest.getName().equals(((Operand) right).getName()))
                 numberToInc = Integer.parseInt(((LiteralElement) left).getLiteral());
             else

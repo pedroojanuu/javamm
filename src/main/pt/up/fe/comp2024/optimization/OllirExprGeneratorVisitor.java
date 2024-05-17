@@ -471,10 +471,10 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         }
 
         if (!hasVarargs) {
-            JmmNode arg = args.getLast();
+            JmmNode arg = args.get(args.size()-1);
             if (arg.getKind().equals(METHOD_CALL_EXPR.toString()) && !table.getMethods().contains(arg.get("method"))) {
                 this.visitingArgImported = true;
-                this.visitingArgImportedType = table.getParameters(calleeName).getLast().getType();
+                this.visitingArgImportedType = table.getParameters(calleeName).get(table.getParameters(calleeName).size()-1).getType();
             }
             argsResult.add(visit(arg));
             this.visitingArgImported = false;
