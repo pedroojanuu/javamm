@@ -49,6 +49,9 @@ public class JasminGenerator {
 
     private int numLessThan = 0;
 
+    private Instruction nextInstructionIsIncrement;
+    private boolean ignoreInst = false;
+
     public JasminGenerator(OllirResult ollirResult) {
         this.ollirResult = ollirResult;
 
@@ -243,12 +246,14 @@ public class JasminGenerator {
 
             var inst = method.getInstructions().get(i);
 
-            // Espreita a instrucao da frente
-            // Se inst atual for um assign, e proxima tambem, e o lado direito da proxima for igual ao laddo esquerdo do assign atual
-            // entao ativa a flag de possivel incremento e otherLeftSide = lado esquerdo da proxima instrucao
-            // Se flag ignoreInstruction estiver ativa, ignora a instrucao atual e desativa a flag
-            if(i < method.getInstructions().size() - 1) {
-                var nextInst = method.getInstructions().get(i + 1);
+            if(i < method.getInstructions().size() - 1)
+                nextInstructionIsIncrement = method.getInstructions().get(i + 1);
+            else
+                nextInstructionIsIncrement = null;
+
+            if(ignoreInst){
+                ignoreInst = false;
+                continue;
             }
 
             if(interseMethodLabels.containsKey(inst))
@@ -339,42 +344,71 @@ public class JasminGenerator {
     }
 
     private String verifyIncrementOrDecrement(AssignInstruction assign) {
-        if(assign.getRhs() instanceof BinaryOpInstruction rhs){
+        if(assign.getRhs() instanceof BinaryOpInstruction){
             Operand dest = (Operand) assign.getDest();
-            Element left = (Element) rhs.getLeftOperand();
-            Element right = (Element) rhs.getRightOperand();
-            OperationType operation = rhs.getOperation().getOpType();
+            String ret = verifyIncrementOrDecrementAux(assign, dest);
+            if(ret != null)
+                return ret;
 
-            int numberToInc;
-
-            // Se flag de possivel incremento estiver ativa, testa tambem com dest = otherLeftSide
-            // Se isto for veradade, ativa a flag de ignorar instrucao
-
-//            if(true) throw new RuntimeException(((Operand) dest).getName());
-            //if(true) throw new NotImplementedException((dest.getName().equals(((Operand) left).getName())) ? "True" : "false");
-            if(right.isLiteral() && left instanceof Operand && dest.getName().equals(((Operand) left).getName())) {
-                //if(true) throw new NotImplementedException("Increment and Decrement not implemented");
-                numberToInc = Integer.parseInt(((LiteralElement) right).getLiteral());
-            }
-            else if (left.isLiteral() && right instanceof Operand && dest.getName().equals(((Operand) right).getName()))
-                numberToInc = Integer.parseInt(((LiteralElement) left).getLiteral());
-            else
-                return null;
-
-            if(operation == OperationType.SUB)
-                numberToInc = -numberToInc;
-            else if(operation != OperationType.ADD)
-                return null;
-
-            int reg = currentMethod.getVarTable().get(dest.getName()).getVirtualReg();
-
-            if(numberToInc >= -128 && numberToInc <= 127) {
-                return "iinc " + reg + " " + Integer.toString(numberToInc) + NL;
+            if(nextInstructionIsIncrement != null && nextInstructionIsIncrement instanceof AssignInstruction nextAssign) {
+                Operand originalDest = (Operand) assign.getDest();
+                Operand possibleDest = (Operand) nextAssign.getDest();
+                if(originalDest.getName().startsWith("tmp") &&
+                        nextAssign.getRhs() instanceof SingleOpInstruction rhs &&
+                        rhs.getSingleOperand() instanceof Operand op &&
+                        op.getName().equals(originalDest.getName())){
+                    ret = verifyIncrementOrDecrementAux(assign, possibleDest);
+                    if(ret != null)
+                        return ret;
+                }
             }
         }
+
+        // Espreita a instrucao da frente
+        // Se inst atual for um assign, e proxima tambem, e o lado direito da proxima for igual ao laddo esquerdo do assign atual
+        // entao ativa a flag de possivel incremento e otherLeftSide = lado esquerdo da proxima instrucao
+        // Se flag ignoreInstruction estiver ativa, ignora a instrucao atual e desativa a flag
+
+        // Se flag de possivel incremento estiver ativa, testa tambem com dest = otherLeftSide
+        // Se isto for veradade, ativa a flag de ignorar instrucao
+
+//            if(true) throw new RuntimeException(((Operand) dest).getName());
+        //if(true) throw new NotImplementedException((dest.getName().equals(((Operand) left).getName())) ? "True" : "false");
+
         return null;
 
     }
+
+    private String verifyIncrementOrDecrementAux(AssignInstruction assign, Operand dest) {
+        BinaryOpInstruction rhs = (BinaryOpInstruction) assign.getRhs();
+        Element left = (Element) rhs.getLeftOperand();
+        Element right = (Element) rhs.getRightOperand();
+        OperationType operation = rhs.getOperation().getOpType();
+
+        int numberToInc;
+
+        if(right.isLiteral() && left instanceof Operand && dest.getName().equals(((Operand) left).getName())) {
+            //if(true) throw new NotImplementedException("Increment and Decrement not implemented");
+            numberToInc = Integer.parseInt(((LiteralElement) right).getLiteral());
+        }
+        else if (left.isLiteral() && right instanceof Operand && dest.getName().equals(((Operand) right).getName()))
+            numberToInc = Integer.parseInt(((LiteralElement) left).getLiteral());
+        else
+            return null;
+
+        if(operation == OperationType.SUB)
+            numberToInc = -numberToInc;
+        else if(operation != OperationType.ADD)
+            return null;
+
+        int reg = currentMethod.getVarTable().get(dest.getName()).getVirtualReg();
+
+        if(numberToInc >= -128 && numberToInc <= 127) {
+            return "iinc " + reg + " " + Integer.toString(numberToInc) + NL;
+        }
+        return null;
+    }
+
 
     private String generateSingleOp(SingleOpInstruction singleOp) {
         return generators.apply(singleOp.getSingleOperand());
