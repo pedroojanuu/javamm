@@ -27,7 +27,7 @@ import java.util.HashMap;
  * One JasminGenerator instance per OllirResult.
  */
 public class JasminGenerator {
-    private final boolean showCode = true;
+    private final boolean showCode = false;
 
     private static final String NL = "\n";
     private static final String TAB = "   ";
@@ -239,11 +239,18 @@ public class JasminGenerator {
         for (Map.Entry<String, Instruction> inst : method.getLabels().entrySet())
             interseMethodLabels.put(inst.getValue(), inst.getKey());
 
-        for (var inst : method.getInstructions()) {
+        for (int i = 0; i < method.getInstructions().size(); i++) {
+
+            var inst = method.getInstructions().get(i);
+
             // Espreita a instrucao da frente
             // Se inst atual for um assign, e proxima tambem, e o lado direito da proxima for igual ao laddo esquerdo do assign atual
             // entao ativa a flag de possivel incremento e otherLeftSide = lado esquerdo da proxima instrucao
             // Se flag ignoreInstruction estiver ativa, ignora a instrucao atual e desativa a flag
+            if(i < method.getInstructions().size() - 1) {
+                var nextInst = method.getInstructions().get(i + 1);
+            }
+
             if(interseMethodLabels.containsKey(inst))
                 codeTemp.append(interseMethodLabels.get(inst)).append(":").append(NL);
             var instCode = StringLines.getLines(generators.apply(inst)).stream()
@@ -251,9 +258,11 @@ public class JasminGenerator {
 
             codeTemp.append(instCode);
 //            codeTemp.append("------------------------------------").append(NL);
-            for(int i = 0; i < stackSize; i++)
+            for(int j = 0; j < stackSize; j++)
                 codeTemp.append(TAB).append("pop").append(NL);
             stackSize = 0;
+
+            // desativa a flag de possivel incremento
         }
 
         // Get max register number
@@ -338,9 +347,10 @@ public class JasminGenerator {
 
             int numberToInc;
 
-            //Se flag de possivel incremento estiver ativa, testa tambem com dest = otherLeftSide
-            // Se isto for veradade, desativa a flag de possivel incremento e ativa a flag de ignorar instrucao
+            // Se flag de possivel incremento estiver ativa, testa tambem com dest = otherLeftSide
+            // Se isto for veradade, ativa a flag de ignorar instrucao
 
+            if(true) throw new RuntimeException(((Operand) dest).getName());
             //if(true) throw new NotImplementedException((dest.getName().equals(((Operand) left).getName())) ? "True" : "false");
             if(right.isLiteral() && left instanceof Operand && dest.getName().equals(((Operand) left).getName())) {
                 //if(true) throw new NotImplementedException("Increment and Decrement not implemented");
