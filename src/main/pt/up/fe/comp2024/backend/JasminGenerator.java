@@ -350,7 +350,7 @@ public class JasminGenerator {
             // Se flag de possivel incremento estiver ativa, testa tambem com dest = otherLeftSide
             // Se isto for veradade, ativa a flag de ignorar instrucao
 
-            if(true) throw new RuntimeException(((Operand) dest).getName());
+//            if(true) throw new RuntimeException(((Operand) dest).getName());
             //if(true) throw new NotImplementedException((dest.getName().equals(((Operand) left).getName())) ? "True" : "false");
             if(right.isLiteral() && left instanceof Operand && dest.getName().equals(((Operand) left).getName())) {
                 //if(true) throw new NotImplementedException("Increment and Decrement not implemented");
