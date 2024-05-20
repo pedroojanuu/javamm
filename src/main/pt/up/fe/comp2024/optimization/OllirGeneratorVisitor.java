@@ -284,6 +284,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         String id = node.get("id");
         String methodName = node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow();
+        System.out.println(TypeUtils.getIdType(id, node, table, methodName, null));
         String type = OptUtils.toOllirType(TypeUtils.getIdType(id, node, table, methodName, null));
 
         OllirExprResult lhs = exprVisitor.visit(node.getJmmChild(0));
