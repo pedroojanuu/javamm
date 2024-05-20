@@ -13,20 +13,24 @@ import pt.up.fe.comp2024.parser.JmmParserImpl;
 import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.SpecsSystem;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class Launcher {
-    public static void main(String[] args) {
-        SpecsSystem.programStandardInit();
+public class TestMany {
+    private static void testFile(String fileName) {
+        var config = CompilerConfig.getDefault();
 
-        Map<String, String> config = CompilerConfig.parseArgs(args);
+        if (!CompilerConfig.putFile(config, fileName)) {
+            throw new RuntimeException("File name " + fileName + " is not a file");
+        }
 
         var inputFile = CompilerConfig.getInputFile(config).orElseThrow();
         if (!inputFile.isFile()) {
-            throw new RuntimeException("Option '-i' expects a path to an existing input file, got '" + args[0] + "'.");
+            throw new RuntimeException("File name " + fileName + " is not a file");
         }
+
         String code = SpecsIo.read(inputFile);
 
         // Parsing stage
@@ -34,14 +38,20 @@ public class Launcher {
         JmmParserResult parserResult = parser.parse(code, config);
         TestUtils.noErrors(parserResult.getReports());
 
-        // Print AST
-        System.out.println(parserResult.getRootNode().toTree());
-
         // Semantic Analysis stage
         JmmAnalysisImpl sema = new JmmAnalysisImpl();
         JmmSemanticsResult semanticsResult = sema.semanticAnalysis(parserResult);
-        System.out.println(semanticsResult.getReports());
-        TestUtils.noErrors(semanticsResult.getReports());
+        try {
+            if (fileName.contains("error")) {
+                TestUtils.mustFail(semanticsResult.getReports());
+            } else {
+                TestUtils.noErrors(semanticsResult.getReports());
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.out.println("Error in file " + fileName);
+            throw e;
+        }
 
         // print the contents of the symbol table (e.g. imports, ...)
         var symbolTable = semanticsResult.getSymbolTable();
@@ -59,9 +69,18 @@ public class Launcher {
 //        JasminBackendImpl jasminGen = new JasminBackendImpl();
 //        JasminResult jasminResult = jasminGen.toJasmin(ollirResult);
 //        TestUtils.noErrors(jasminResult.getReports());
-//
-//        // Print Jasmin code
+
+        // Print Jasmin code
 //        System.out.println(jasminResult.getJasminCode());
-        // jasminResult.run();
+    }
+
+    public static void main(String[] args) {
+        File[] fileList = new File("input/").listFiles();
+        for (File file : fileList) {
+            String fileName = file.getName();
+            System.out.println("Testing file " + fileName);
+            testFile("input/" + fileName);
+            System.out.print("\n--------------------\n");
+        }
     }
 }

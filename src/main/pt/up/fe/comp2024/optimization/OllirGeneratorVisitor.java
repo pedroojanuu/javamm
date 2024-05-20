@@ -194,7 +194,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         if (!params.isEmpty()) {
             for (int i = 0; i < params.size() - 1; i++) code.append(visit(params.get(i)) + ", ");
             code.append(visit(params.get(params.size() - 1)));
-            // code.append(visit(params.getLast()));
         }
         code.append(")");
 
@@ -207,7 +206,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         int afterParams = params.size() + 1;
         for (int i = afterParams; i < node.getNumChildren() - 1; i++)
             code.append(visit(node.getJmmChild(i)));
-        //code.append(returnStmt(node.getChildren().getLast()));
         code.append(returnStmt(node.getChildren().get(node.getNumChildren() - 1)));
 
         code.append(R_BRACKET);
