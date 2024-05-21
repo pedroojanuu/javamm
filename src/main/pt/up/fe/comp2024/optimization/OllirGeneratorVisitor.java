@@ -194,7 +194,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         if (!params.isEmpty()) {
             for (int i = 0; i < params.size() - 1; i++) code.append(visit(params.get(i)) + ", ");
             code.append(visit(params.get(params.size() - 1)));
-            // code.append(visit(params.getLast()));
         }
         code.append(")");
 
@@ -207,7 +206,6 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         int afterParams = params.size() + 1;
         for (int i = afterParams; i < node.getNumChildren() - 1; i++)
             code.append(visit(node.getJmmChild(i)));
-        //code.append(returnStmt(node.getChildren().getLast()));
         code.append(returnStmt(node.getChildren().get(node.getNumChildren() - 1)));
 
         code.append(R_BRACKET);
@@ -286,6 +284,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         String id = node.get("id");
         String methodName = node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow();
+        System.out.println(TypeUtils.getIdType(id, node, table, methodName, null));
         String type = OptUtils.toOllirType(TypeUtils.getIdType(id, node, table, methodName, null));
 
         OllirExprResult lhs = exprVisitor.visit(node.getJmmChild(0));

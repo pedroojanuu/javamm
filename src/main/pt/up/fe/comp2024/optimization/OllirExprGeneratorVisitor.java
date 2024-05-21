@@ -279,6 +279,11 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
 
         Optional<JmmNode> assignAncestor = node.getAncestor(ASSIGN_STMT);
         Optional<JmmNode> invokeAncestor = node.getAncestor(METHOD_CALL_EXPR);  // to determine if result will be discarded
+        Optional<JmmNode> notOptAncestor = node.getAncestor(NOT_EXPR);
+        Optional<JmmNode> binOptAncestor = node.getAncestor(BINARY_EXPR);
+        boolean whileParent = node.getParent().getKind().equals(IF_STMT.toString());
+        boolean ifParent = node.getParent().getKind().equals(WHILE_STMT.toString());
+
         if (assignAncestor.isPresent() && !invokeAncestor.isPresent())
             // type will be that of the lhs of the assignment expression
             type = OptUtils.toOllirType(TypeUtils.getIdType(assignAncestor.get().get("id"), node.getParent(), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null));
@@ -289,6 +294,16 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
             type = OptUtils.toOllirType(this.visitingArgImportedType);
         else if (visitingReturn)
             type = OptUtils.toOllirType(returnType);
+        else if (notOptAncestor.isPresent())
+            type = ".bool";
+        else if (binOptAncestor.isPresent()) {
+            String op = binOptAncestor.get().get("op");
+            if (op.equals("*") || op.equals("/") || op.equals("+") || op.equals("-"))
+                type = ".i32";
+            else if (op.equals("<") || op.equals("&&"))
+                type = ".bool";
+        } else if (whileParent || ifParent)
+            type = ".bool";
         else type = ".V";
 
         invoke = "invokevirtual";
