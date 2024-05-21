@@ -13,6 +13,7 @@ import pt.up.fe.comp2024.parser.JmmParserImpl;
 import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.SpecsSystem;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -54,26 +55,45 @@ public class Launcher {
         var symbolTable = semanticsResult.getSymbolTable();
         System.out.println(symbolTable);
 
-        /*
         // Optimization stage
         JmmOptimizationImpl ollirGen = new JmmOptimizationImpl();
         OllirResult ollirResult = ollirGen.toOllir(semanticsResult);
-        TestUtils.noErrors(ollirResult.getReports());
+//        TestUtils.noErrors(ollirResult.getReports());
 
         // Print OLLIR code
-        //System.out.println(ollirResult.getOllirCode());
+        System.out.println(ollirResult.getOllirCode());
 
         // Code generation stage
         JasminBackendImpl jasminGen = new JasminBackendImpl();
         JasminResult jasminResult = jasminGen.toJasmin(ollirResult);
-        TestUtils.noErrors(jasminResult.getReports());
+//        TestUtils.noErrors(jasminResult.getReports());
 
         // Print Jasmin code
-        //System.out.println(jasminResult.getJasminCode());
-        */
+        System.out.println(jasminResult.getJasminCode());
+        jasminResult.run();
     }
+
+    public static void testAllFiles(){
+        File directoryPath = new File("input/");
+        String[] files = directoryPath.list();
+        assert files != null;
+        for (String file : files) {
+            System.out.println(file);
+            System.out.println("-------------------- " + file + ":\n");
+            testFile("input/" + file);
+            System.out.println("-------------------- done\n");
+        }
+    }
+
     public static void main(String[] args) {
         SpecsSystem.programStandardInit();
+
+        if(args.length == 0){
+            testAllFiles();
+            return;
+        }
+
+        System.out.println("Running with arguments: " + Arrays.toString(args));
 
         Map<String, String> config = CompilerConfig.parseArgs(args);
 
@@ -119,13 +139,13 @@ public class Launcher {
         System.out.println(ollirResult.getOllirCode());
 
         // Code generation stage
-//        JasminBackendImpl jasminGen = new JasminBackendImpl();
-//        JasminResult jasminResult = jasminGen.toJasmin(ollirResult);
-//        TestUtils.noErrors(jasminResult.getReports());
-//
-//        // Print Jasmin code
-//        System.out.println(jasminResult.getJasminCode());
-        // jasminResult.run();
+        JasminBackendImpl jasminGen = new JasminBackendImpl();
+        JasminResult jasminResult = jasminGen.toJasmin(ollirResult);
+        TestUtils.noErrors(jasminResult.getReports());
+
+        // Print Jasmin code
+        System.out.println(jasminResult.getJasminCode());
+         jasminResult.run();
     }
 
 }

@@ -6,4 +6,6 @@ class A {
     int... wrong() {
         return new int[10];
     }
+
+    public static void main(String[] args) {}
 }

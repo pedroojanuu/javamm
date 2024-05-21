@@ -6,4 +6,6 @@ class B {
         b = new A();
         return 0;
     }
+
+    public static void main(String[] args) {}
 }

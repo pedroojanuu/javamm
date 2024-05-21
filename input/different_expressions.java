@@ -27,4 +27,6 @@ class Factorial {
     /*public static void nothing(MyClass[] a) {
         return 0;
     }*/
+
+    public static void main(String[] args) {}
 }

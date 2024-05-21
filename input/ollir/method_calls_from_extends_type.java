@@ -15,4 +15,6 @@ class Simple extends Another {
         a = a.self();
         return a;
     }
+
+    public static void main(String[] args) {}
 }

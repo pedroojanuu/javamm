@@ -73,7 +73,6 @@ public class JasminGenerator {
         generators.put(PutFieldInstruction.class, this::generatePutField);
         generators.put(GetFieldInstruction.class, this::generateGetField);
         generators.put(Field.class, this::generateField);
-//        generators.put(SingleOpCondInstruction.class, this::generateSingleOpCond);
         generators.put(CondBranchInstruction.class, this::generateCondBranch);
         generators.put(GotoInstruction.class, this::generateGoto);
     }
@@ -224,7 +223,7 @@ public class JasminGenerator {
 
         String paramList = "";
 
-        if(methodParams.size() != 0) {
+        if(!methodParams.isEmpty()) {
             for (var param: methodParams) {
                 paramList += transformToJasminType(param.getType());
             }
@@ -238,9 +237,16 @@ public class JasminGenerator {
                 .append(methodType)
                 .append(NL);
 
-        HashMap<Instruction, String> interseMethodLabels = new HashMap<>();
-        for (Map.Entry<String, Instruction> inst : method.getLabels().entrySet())
-            interseMethodLabels.put(inst.getValue(), inst.getKey());
+        HashMap<Instruction, List<String>> methodLabels = new HashMap<>();
+        for (Map.Entry<String, Instruction> inst : method.getLabels().entrySet()){
+            if(methodLabels.containsKey(inst.getValue())){
+                methodLabels.get(inst.getValue()).add(inst.getKey());
+            } else {
+                List<String> labels = new ArrayList<>();
+                labels.add(inst.getKey());
+                methodLabels.put(inst.getValue(), labels);
+            }
+        }
 
         for (int i = 0; i < method.getInstructions().size(); i++) {
 
@@ -256,8 +262,9 @@ public class JasminGenerator {
                 continue;
             }
 
-            if(interseMethodLabels.containsKey(inst))
-                codeTemp.append(interseMethodLabels.get(inst)).append(":").append(NL);
+            if(methodLabels.containsKey(inst))
+                for(String label : methodLabels.get(inst))
+                    codeTemp.append(label).append(":").append(NL);
             var instCode = StringLines.getLines(generators.apply(inst)).stream()
                     .collect(Collectors.joining(NL + TAB, TAB, NL));
 

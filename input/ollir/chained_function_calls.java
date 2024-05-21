@@ -20,4 +20,6 @@ class A {
     int testing_import() {
         return this.self().self().self().self().self().self().self().self().self().self().self().returnImport().importFunction();
     }
+
+    public static void main(String[] args) {}
 }

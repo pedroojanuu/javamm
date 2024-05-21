@@ -15,4 +15,6 @@ class A extends B {
         b = a.foo();
         return 0;
     }
+
+    public static void main(String[] args) {}
 }

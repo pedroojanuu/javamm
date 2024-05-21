@@ -26,4 +26,6 @@ class A {
         a.foo().anyfunctionnnnnnnnnnnnnnnnn();
         return 0;
     }
+
+    public static void main(String[] args) {}
 }

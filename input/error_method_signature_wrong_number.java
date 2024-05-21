@@ -12,4 +12,6 @@ class A {
         a = this.abc();
         return 0;
     }
+
+    public static void main(String[] args) {}
 }

@@ -8,4 +8,6 @@ class Simple {
     public int test() {
         return this.self(this.self(new Simple(), 2).self(new Simple(),2) ,2).returnInt();
     }
+
+    public static void main(String[] args) {}
 }
