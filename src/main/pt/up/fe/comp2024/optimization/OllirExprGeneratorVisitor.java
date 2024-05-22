@@ -321,8 +321,8 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
             type = ".bool";
         else type = ".V";
 
-        Optional<List<Symbol>> methodLocals = table.getLocalVariablesTry(caller);
 
+        Optional<List<Symbol>> methodLocals = table.getLocalVariablesTry(caller);
         if (methodLocals.isPresent()) {
             List<Symbol> locals = methodLocals.get();
             for (Symbol symbol : locals) {
