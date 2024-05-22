@@ -1,4 +1,4 @@
-import pq;
+import PQ;
 
 class Dijkstra {
     int[] distances;
@@ -14,8 +14,9 @@ class Dijkstra {
         int[] adj;
         int[] lenghts;
         int[] weights;
+        PQ pq;
         distances[u] = 0;
-        pq = new pq();
+        pq = new PQ();
         pq.add(u, 0);
         while (!pq.isEmpty()) {
             v = pq.poll();

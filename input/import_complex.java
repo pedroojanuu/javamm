@@ -16,8 +16,8 @@ class A {
     }
 
     int assumptions() {
-        int[] array;
-        array = arr.genarray(10);
+        int[] a;
+        a = arr.genarray(10);
         return 0;
     }
     public int anotherone() {

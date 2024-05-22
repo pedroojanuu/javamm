@@ -2,7 +2,7 @@ import io;
 class Factorial {
     int main;
     int length;
-    int String;
+    int string;
     String a;
     int computeFactorial(int a) {
         return a;

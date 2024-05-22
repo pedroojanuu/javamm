@@ -79,8 +79,8 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         code.append(IMPORT);
 
-        // Compound imports come from the tree as a list of strings
-        // i.e. "import a.b.c;" comes as ["a", "b", "c"]
+        // Compound imports come from the tree as a string that contains a list of strings
+        // i.e. "import a.b.c;" comes as "[a, b, c]"
         String id = node.get("id");
         String[] contents = id.substring(1, id.length() - 1).split(", ");
         String result = String.join(".", contents);

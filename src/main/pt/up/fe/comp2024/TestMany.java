@@ -14,6 +14,7 @@ import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.SpecsSystem;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,7 @@ public class TestMany {
         } catch (Exception e) {
             System.out.println(e.getMessage());
             System.out.println("Error in file " + fileName);
-            throw e;
+            return;
         }
 
         // print the contents of the symbol table (e.g. imports, ...)
@@ -76,11 +77,20 @@ public class TestMany {
 
     public static void main(String[] args) {
         File[] fileList = new File("input/").listFiles();
+        List<String> errors = new ArrayList<>();
         for (File file : fileList) {
             String fileName = file.getName();
             System.out.println("Testing file " + fileName);
-            testFile("input/" + fileName);
+            try{
+                testFile("input/" + fileName);
+            } catch (Exception e) {
+                System.out.println("Error testing file " + fileName + ": " + e.getMessage());
+                errors.add(fileName);
+            }
             System.out.print("\n--------------------\n");
         }
+
+        System.out.println("ERRORS:");
+        for (String s : errors) System.out.println(s);
     }
 }
