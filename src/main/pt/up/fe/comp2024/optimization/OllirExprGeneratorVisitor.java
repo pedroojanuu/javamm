@@ -152,43 +152,55 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         var id = node.get("id");
         String methodName = node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow();
 
-        boolean isField = true;
+        /*
+            0 = import
+            1 = field
+            2 = param
+            3 = local var
+         */
+        int varType = 0;
 
-        Optional<List<Symbol>> methodLocals = table.getLocalVariablesTry(methodName);
+        List<Symbol> classFields = table.getFields();
+        for (Symbol symbol : classFields) {
+            if (symbol.getName().equals(id)) {
+                varType = 1;
+                break;
+            }
+        }
 
-        if (methodLocals.isPresent()) {
-            List<Symbol> locals = methodLocals.get();
-            for (Symbol symbol : locals) {
+        Optional<List<Symbol>> methodParams = table.getParametersTry(methodName);
+        if (methodParams.isPresent()) {
+            List<Symbol> params = methodParams.get();
+            for (Symbol symbol : params) {
                 if (symbol.getName().equals(id)) {
-                    isField = false;
+                    varType = 2;
                     break;
                 }
             }
         }
 
-        Optional<List<Symbol>> methodParams = table.getParametersTry(methodName);
-
-        if (isField && methodParams.isPresent()) {
-            List<Symbol> params = methodParams.get();
-            for (Symbol symbol : params) {
+        Optional<List<Symbol>> methodLocals = table.getLocalVariablesTry(methodName);
+        if (methodLocals.isPresent()) {
+            List<Symbol> locals = methodLocals.get();
+            for (Symbol symbol : locals) {
                 if (symbol.getName().equals(id)) {
-                    isField = false;
+                    varType = 3;
                     break;
                 }
             }
         }
 
         // TODO: repensar
-        if (isField) {
-            for (JmmNode imp : importNodes) {
-                if (imp.get("ID").equals(id)) {
-                    isField = false;
-                    break;
-                }
-            }
-        }
+//        if (isField) {
+//            for (JmmNode imp : importNodes) {
+//                if (imp.get("ID").equals(id)) {
+//                    isField = false;
+//                    break;
+//                }
+//            }
+//        }
 
-        if (isField) return classFieldVar(node);
+        if (varType == 1) return classFieldVar(node);
 
         Type type = TypeUtils.getExprType(node, table, methodName, null);
         String ollirType = "";
