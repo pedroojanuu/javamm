@@ -1,17 +1,28 @@
 import io;
-class Factorial {
-    int main;
-    int length;
-    int string;
-    String a;
-    int computeFactorial(int a) {
-        return a;
-    }
+
+class ArrayVarargs {
+
     public static void main(String[] args) {
-        io.println(new Factorial().computeFactorial(10));
+        ArrayVarargs a;
+        a = new ArrayVarargs();
+
+        a.bar();
     }
-    /*
-    nothing here
-    aaa
-     */
+
+    int foo(int... a) {
+        return a[0];
+    }
+
+    int bar() {
+        int res;
+
+        res = this.foo(1, 2, 3);
+        io.println(res);
+
+        res = this.foo(4);
+        io.println(res);
+
+        return res;
+    }
+
 }
