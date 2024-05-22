@@ -178,6 +178,7 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
             }
         }
 
+        // TODO: repensar
         if (isField) {
             for (JmmNode imp : importNodes) {
                 if (imp.get("ID").equals(id)) {
@@ -271,11 +272,25 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
 
         OllirExprResult objectVisit = visit(node.getJmmChild(0));
         computation.append(objectVisit.getComputation());
-        String objectName = objectVisit.getCode();
-        String methodName = node.get("method");
 
-        String invoke = "";
+        String objectName;
+
+        String invoke = "invokestatic";
         String type = "";
+
+        if (node.getJmmChild(0).getKind().equals(THIS_EXPR.toString())) {
+            objectName = "this";
+            invoke = "invokevirtual";
+        }
+        else if (node.getJmmChild(0).getKind().equals(ID_LITERAL_EXPR.toString()))
+            objectName = node.getJmmChild(0).get("id");
+        else {
+            objectName = "";
+            invoke = "invokevirtual";
+        }
+
+        String caller = node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow();
+        String callee = node.get("method");
 
         Optional<JmmNode> assignAncestor = node.getAncestor(ASSIGN_STMT);
         Optional<JmmNode> invokeAncestor = node.getAncestor(METHOD_CALL_EXPR);  // to determine if result will be discarded
@@ -287,8 +302,8 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         if (assignAncestor.isPresent() && !invokeAncestor.isPresent())
             // type will be that of the lhs of the assignment expression
             type = OptUtils.toOllirType(TypeUtils.getIdType(assignAncestor.get().get("id"), node.getParent(), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null));
-        else if (table.getMethods().contains(methodName)) {
-            type = OptUtils.toOllirType(table.getReturnType(methodName));
+        else if (table.getMethods().contains(callee)) {
+            type = OptUtils.toOllirType(table.getReturnType(callee));
             if (!visitingReturn && !assignAncestor.isPresent() && !invokeAncestor.isPresent()) return visitCallExprDiscard(node, type);
         } else if (this.visitingArgImported)
             type = OptUtils.toOllirType(this.visitingArgImportedType);
@@ -306,21 +321,57 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
             type = ".bool";
         else type = ".V";
 
-        invoke = "invokevirtual";
+        Optional<List<Symbol>> methodLocals = table.getLocalVariablesTry(caller);
 
-        for (JmmNode imp : importNodes)
-            if (imp.get("ID").equals(objectName)) {
-                invoke = "invokestatic";
-                break;
+        if (methodLocals.isPresent()) {
+            List<Symbol> locals = methodLocals.get();
+            for (Symbol symbol : locals) {
+                System.out.println(symbol);
+                System.out.println(objectName);
+                if (symbol.getName().equals(objectName)) {
+                    invoke = "invokevirtual";
+                    break;
+                }
             }
+        }
 
-        List<OllirExprResult> argsResult = visitArgs(node, methodName);
+        Optional<List<Symbol>> methodParams = table.getParametersTry(caller);
+
+        if (invoke.equals("invokestatic") && methodParams.isPresent()) {
+            List<Symbol> params = methodParams.get();
+            for (Symbol symbol : params) {
+                if (symbol.getName().equals(objectName)) {
+                    invoke = "invokevirtual";
+                    break;
+                }
+            }
+        }
+
+        List<Symbol> classFields = table.getFields();
+
+        if (invoke.equals("invokestatic")) {
+            for (Symbol symbol : classFields) {
+                if (symbol.getName().equals(objectName)) {
+                    invoke = "invokevirtual";
+                    break;
+                }
+            }
+        }
+
+        // pode ter nome igual a import!
+//        for (JmmNode imp : importNodes)
+//            if (imp.get("ID").equals(objectName)) {
+//                invoke = "invokestatic";
+//                break;
+//            }
+
+        List<OllirExprResult> argsResult = visitArgs(node, callee);
 
         for (OllirExprResult argResult : argsResult)
             computation.append(argResult.getComputation());
 
         StringBuilder invocation = new StringBuilder();
-        invocation.append(invoke + "(" + objectName + ", \"" + methodName + "\"");
+        invocation.append(invoke + "(" + objectVisit.getCode() + ", \"" + callee + "\"");
 
         if (!argsResult.isEmpty()) {
             invocation.append(", ");

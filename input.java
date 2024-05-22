@@ -1,17 +1,31 @@
+import Nothing.B;
 import io;
-class Factorial {
-    int main;
-    int length;
-    int string;
-    String a;
-    int computeFactorial(int a) {
-        return a;
+import arr;
+
+class A {
+    B foo() {
+        return new B();
     }
-    public static void main(String[] args) {
-        io.println(new Factorial().computeFactorial(10));
+    NotImportedClass myfunc() {
+        return new NotImportedClass();
     }
-    /*
-    nothing here
-    aaa
-     */
+    int X() {
+        int a;
+        a = this.foo().bar();
+        return 0;
+    }
+
+    int assumptions() {
+        int[] a;
+        a = arr.genarray(10);
+        return 0;
+    }
+    public int anotherone() {
+        A a;
+        a = new A();
+        a.foo().anyfunctionnnnnnnnnnnnnnnnn();
+        return 0;
+    }
+
+    public static void main(String[] args) {}
 }
