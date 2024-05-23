@@ -48,7 +48,8 @@ public class LivenessAnalysis {
             // handlers.put(OpCondInstruction.class, this::handleOpCond);
     }
     private void addVariableToUse(String varName) {
-        if (descriptors.get(varName) != null) {
+        Descriptor d = descriptors.get(varName);
+        if (d != null && d.getScope() != VarScope.PARAMETER) {
             usedVariables.get(instructionNumber).add(varName);
         }
     }
@@ -93,7 +94,6 @@ public class LivenessAnalysis {
         return null;
     }
     private String handleOperand(Operand operand) {
-        System.out.println("Operand name: " + operand.getName());
         String varName = operand.getName();
         addVariableToUse(varName);
         return null;
@@ -144,6 +144,7 @@ public class LivenessAnalysis {
             throw new NotImplementedException("AssignInstruction with non-Operand lhs");
         }
         if (lhsOperand.isParameter()) { // parameters have their own registers
+            System.out.println("variable " + lhsOperand.getName() + " is a parameter");
             return null;
         }
 
@@ -163,7 +164,7 @@ public class LivenessAnalysis {
         Element left = binaryOpInstruction.getLeftOperand();
         Element right = binaryOpInstruction.getRightOperand();
 
-        handlers.apply(left);   // TODO: change this?
+        handlers.apply(left);   // TODO: change this? (I don't remember why this TODO is here...)
         handlers.apply(right);
         return null;
     }
@@ -216,17 +217,15 @@ public class LivenessAnalysis {
 
                 // instrLiveIn = instrUsed U (instrLiveOut - instrDefined)
                 instrLiveIn.clear();
-                instrLiveIn.addAll(instrLiveOut);
+                instrLiveIn.addAll(instrLiveOut);       // first subtract
                 instrLiveIn.removeAll(instrDefined);
-                instrLiveIn.addAll(instrUsed);
+                instrLiveIn.addAll(instrUsed);          // union
 
                 // instrLiveOut = U { s in instrSuccessors } liveIn[s]
                 for (Integer successor : instrSuccessors) {
                     instrLiveOut.addAll(liveIn.get(successor));
                 }
             }
-            System.out.println("live in: " + liveIn + " prev: " + prevLiveIn);
-            System.out.println("live out: " + liveOut + " prev: " + prevLiveOut);
         } while(!liveIn.equals(prevLiveIn) || !liveOut.equals(prevLiveOut));    // repeat until liveIn and liveOut don't change
 
         return new LivenessAnalysisResult(liveIn, liveOut);

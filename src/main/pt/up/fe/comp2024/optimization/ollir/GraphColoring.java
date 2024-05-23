@@ -3,10 +3,13 @@ package pt.up.fe.comp2024.optimization.ollir;
 import java.util.*;
 
 public class GraphColoring {
-    private final int registerNumberLimit;
+    private Integer registerNumberLimit = null;
     private boolean isSpilled = false;
 
-    public GraphColoring(int registerNumberLimit) {
+    public GraphColoring() {
+        this.registerNumberLimit = null;
+    }
+    public void setRegisterNumberLimit(int registerNumberLimit) {
         this.registerNumberLimit = registerNumberLimit;
     }
 
@@ -73,7 +76,7 @@ public class GraphColoring {
         while (!graph.getNodes().isEmpty()) {
             String node = null;
             for (String n: graph.getNodes()) {
-                if (graph.getAdjacentNodes(n).size() < registerNumberLimit) {
+                if (graph.getAdjacentNodes(n).size() < registerNumberLimit) {   // if registerNumberLimit <= 0, it works as expected
                     node = n;
                     break;
                 }
@@ -88,6 +91,7 @@ public class GraphColoring {
                         nodeWithLeastEdges = n;
                     }
                 }
+
                 nodesSpilled.add(nodeWithLeastEdges);
                 graph.removeNode(nodeWithLeastEdges);
             }
@@ -103,21 +107,24 @@ public class GraphColoring {
         while (!stack.isEmpty()) {
             String node = stack.pop();
             Set<Integer> adjacentNodeColors = new HashSet<>();  // list of colors of adjacent nodes
-            for (String neighbor : graph.getAdjacentNodes(node)) {
+            for (String neighbor: graph.getAdjacentNodes(node)) {
                 adjacentNodeColors.add(colors.get(neighbor));   // returns null for nodes without color
             }
             int color = 0;
-            while (color < registerNumberLimit && adjacentNodeColors.contains(color)) {
+            while (color < registerNumberLimit && adjacentNodeColors.contains(color)) { // no nodes in stack if registerNumberLimit <= 0
                 color++;
             }
 
-            if (color == registerNumberLimit) { // no more colors available
+            if (color >= registerNumberLimit) { // no more colors available
+                System.out.println("Suspicious place for the algorithm");
                 return null;
             }
             colors.put(node, color);
         }
 
         isSpilled = !nodesSpilled.isEmpty();
+        System.out.println("nodes spilled: " + nodesSpilled);
+
         for (String node: nodesSpilled) {
             // find a color not used by neighbors or the smallest color not used
             Set<Integer> adjacentNodeColors = new HashSet<>();  // list of colors of adjacent nodes

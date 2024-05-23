@@ -1,15 +1,8 @@
 package pt.up.fe.comp2024.optimization.ast;
 
-import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
-import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
-import pt.up.fe.comp.jmm.ast.JmmNodeImpl;
 import pt.up.fe.comp.jmm.ast.PostorderJmmVisitor;
-import pt.up.fe.comp.jmm.ast.PreorderJmmVisitor;
-import pt.up.fe.comp.jmm.report.Stage;
-import pt.up.fe.comp2024.analysis.AnalysisPass;
 import pt.up.fe.comp2024.ast.Kind;
-import pt.up.fe.comp2024.utils.ReportUtils;
 
 import java.util.List;
 import java.util.function.BiFunction;
@@ -66,8 +59,8 @@ public class ConstantFolding extends PostorderJmmVisitor<Void, Boolean> {
                 case "/" -> leftValue / rightValue;
                 default -> throw new IllegalStateException("Unexpected value: " + operator);
             };
-            binaryExpr.removeJmmChild(left);
-            binaryExpr.removeJmmChild(right);
+            binaryExpr.removeChild(left);
+            binaryExpr.removeChild(right);
 
             JmmNode newIntLiteral = NodeHelper.createNewIntLiteral(result);
             binaryExpr.replace(newIntLiteral);
@@ -98,6 +91,6 @@ public class ConstantFolding extends PostorderJmmVisitor<Void, Boolean> {
 
             return true;
         }
-        return true;
+        return false;
     }
 }

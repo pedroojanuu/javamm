@@ -11,11 +11,11 @@ public class LivenessAnalysisResult {
         this.in = liveIn;
         this.out = liveOut;
     }
-    public Set<String> getLiveIn(int instr_nr) {
-        return in.get(instr_nr);
+    public Set<String> getLiveIn(int instrNr) {
+        return in.get(instrNr);
     }
-    public Set<String> getLiveOut(int instr_nr) {
-        return out.get(instr_nr);
+    public Set<String> getLiveOut(int instrNr) {
+        return out.get(instrNr);
     }
     public int getLiveOutSize() {
         return out.size();
