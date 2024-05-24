@@ -11,7 +11,7 @@ import java.util.*;
 
 public class LivenessAnalysis {
     List<Report> reports;
-    private final FunctionClassMap<TreeNode, String> handlers;
+    private final FunctionClassMap<TreeNode, Void> handlers;
     OllirResult ollirResult;
 
     // using sets to prevent duplicates (e.g.: b = a + a)
@@ -40,12 +40,8 @@ public class LivenessAnalysis {
         handlers.put(CallInstruction.class, this::handleCall);
         handlers.put(PutFieldInstruction.class, this::handlePutField);
         handlers.put(GetFieldInstruction.class, this::handleGetField);
-
         handlers.put(GotoInstruction.class, this::handleGoto);
-
-        // handlers.put(CondBranchInstruction.class, this::handleCondBranch);
-            // handlers.put(SingleOpCondInstruction.class, this::handleSingleOp);
-            // handlers.put(OpCondInstruction.class, this::handleOpCond);
+        handlers.put(CondBranchInstruction.class, this::handleCondBranch);
     }
     private void addVariableToUse(String varName) {
         Descriptor d = descriptors.get(varName);
@@ -54,60 +50,59 @@ public class LivenessAnalysis {
         }
     }
 
-    private String handleGoto(GotoInstruction gotoInstruction) {
+    private Void handleGoto(GotoInstruction gotoInstruction) {
         int successorIndex = currentMethod.getInstructions().indexOf(currentMethod.getLabels().get(gotoInstruction.getLabel()));
         successors.get(instructionNumber).add(successorIndex);
         return null;
     }
-    private String handleCondBranch(CondBranchInstruction condBranchInstruction) {
-        /*
-        Element left = condBranchInstruction.getLeftOperand();
-        Element right = condBranchInstruction.getRightOperand();
-
-        handlers.apply(left);
-        handlers.apply(right);
-        */
+    private Void handleCondBranch(CondBranchInstruction condBranchInstruction) {
+        handlers.apply(condBranchInstruction.getCondition());
+        Instruction successor = currentMethod.getLabels().get(condBranchInstruction.getLabel());
+        int successorNr = currentMethod.getInstructions().indexOf(successor);
+        successors.get(instructionNumber).add(successorNr);
         return null;
     }
-    private String handleArrayOperand(ArrayOperand arrayOperand) {
+    private Void handleArrayOperand(ArrayOperand arrayOperand) {
         String arrayOperandName = arrayOperand.getName();
         addVariableToUse(arrayOperandName);
         List<Element> indexOperands = arrayOperand.getIndexOperands();
         indexOperands.forEach(handlers::apply);
         return null;
     }
-    private String handleGetField(GetFieldInstruction getFieldInstruction) {
+    private Void handleGetField(GetFieldInstruction getFieldInstruction) {
         Element object = getFieldInstruction.getObject();
         handlers.apply(object);
+        // this is probably not needed
+        // field accesses are only allowed for "this" and "this" must always have a register
         return null;
     }
-    private String handleCall(CallInstruction callInstruction) {
+    private Void handleCall(CallInstruction callInstruction) {
         handlers.apply(callInstruction.getCaller());
         for (var arg : callInstruction.getArguments()) {
             handlers.apply(arg);
         }
         return null;
     }
-    private String handleUnaryOp(UnaryOpInstruction unaryOpInstruction) {
+    private Void handleUnaryOp(UnaryOpInstruction unaryOpInstruction) {
         Element operand = unaryOpInstruction.getOperand();
         handlers.apply(operand);
         return null;
     }
-    private String handleOperand(Operand operand) {
+    private Void handleOperand(Operand operand) {
         String varName = operand.getName();
         addVariableToUse(varName);
         return null;
     }
-    private String handleSingleOp(SingleOpInstruction singleOpInstruction) {
+    private Void handleSingleOp(SingleOpInstruction singleOpInstruction) {
         Element operand = singleOpInstruction.getSingleOperand();
         handlers.apply(operand);
         return null;
     }
-    private String handleLiteral(LiteralElement literalElement) {
+    private Void handleLiteral(LiteralElement literalElement) {
         // no need to handle constants (e.g. 5 or true)
         return null;
     }
-    private String handleMethod(Method method) {
+    private Void handleMethod(Method method) {
         method.buildCFG();
         currentMethod = method;
         descriptors = method.getVarTable();
@@ -136,7 +131,7 @@ public class LivenessAnalysis {
 
         return null;
     }
-    private String handleAssign(AssignInstruction assignInstruction) {
+    private Void handleAssign(AssignInstruction assignInstruction) {
         var lhs = assignInstruction.getDest();
         Set<String> defined = definedVariables.get(instructionNumber);
         if (!(lhs instanceof Operand lhsOperand)) {
@@ -160,7 +155,7 @@ public class LivenessAnalysis {
         handlers.apply(assignInstruction.getRhs());
         return null;
     }
-    private String handleBinaryOp(BinaryOpInstruction binaryOpInstruction) {
+    private Void handleBinaryOp(BinaryOpInstruction binaryOpInstruction) {
         Element left = binaryOpInstruction.getLeftOperand();
         Element right = binaryOpInstruction.getRightOperand();
 
@@ -168,21 +163,19 @@ public class LivenessAnalysis {
         handlers.apply(right);
         return null;
     }
-    private String handleReturn(ReturnInstruction returnInstruction) {
+    private Void handleReturn(ReturnInstruction returnInstruction) {
         Element returnOperand = returnInstruction.getOperand();
         if (returnOperand != null) {    // methods can have no return
             handlers.apply(returnOperand);
         }
         return null;
     }
-    private String handlePutField(PutFieldInstruction putFieldInstruction) {
-        // do fields count towards liveness and registers?
-        /*
-        Element object = putFieldInstruction.getObject();
+    private Void handlePutField(PutFieldInstruction putFieldInstruction) {
+        // fields do not count towards liveness or registers (because a register is always reserved for "this")
+        // however, the value assigned to the field should be handled (added to used)
+
         Element value = putFieldInstruction.getValue();
-        handlers.apply(object);
         handlers.apply(value);
-         */
         return null;
     }
 
