@@ -305,6 +305,7 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         String callee = node.get("method");
 
         Optional<JmmNode> assignAncestor = node.getAncestor(ASSIGN_STMT);
+        if (!assignAncestor.isPresent()) assignAncestor = node.getAncestor(ARRAY_ASSIGN_STMT);
         Optional<JmmNode> invokeAncestor = node.getAncestor(METHOD_CALL_EXPR);  // to determine if result will be discarded
         Optional<JmmNode> notOptAncestor = node.getAncestor(NOT_EXPR);
         Optional<JmmNode> binOptAncestor = node.getAncestor(BINARY_EXPR);
