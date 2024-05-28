@@ -21,6 +21,8 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
     private static final String SPACE = " ";
     private static final String ASSIGN = ":=";
     private final String END_STMT = ";\n";
+    private final String IF = "if";
+    private final String GOTO = "goto";
 
     private final SymbolTable table;
 
@@ -90,9 +92,9 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         String ifThen = OptUtils.getIfThen();
         String ifEnd = OptUtils.getIfEnd();
 
-        computation.append("if (" + lhs.getCode() + ") goto " + ifThen + END_STMT);
+        computation.append(IF + SPACE + "(" + lhs.getCode() + ")" + SPACE + GOTO + SPACE + ifThen + END_STMT);
         computation.append(temp + SPACE + ASSIGN + booleanOllirType + SPACE + OptUtils.toOllirBoolean("false") + booleanOllirType + END_STMT);
-        computation.append("goto " + ifEnd + END_STMT);
+        computation.append(GOTO + SPACE + ifEnd + END_STMT);
 
         computation.append(ifThen + ":\n");
         computation.append(temp + SPACE + ASSIGN + booleanOllirType + SPACE + rhs.getCode() + END_STMT);
@@ -323,16 +325,16 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         else if (visitingReturn)
             type = OptUtils.toOllirType(returnType);
         else if (notOptAncestor.isPresent())
-            type = ".bool";
+            type = OptUtils.toOllirType(TypeUtils.getBooleanType());
         else if (binOptAncestor.isPresent()) {
             String op = binOptAncestor.get().get("op");
             if (op.equals("*") || op.equals("/") || op.equals("+") || op.equals("-"))
-                type = ".i32";
+                type = OptUtils.toOllirType(TypeUtils.getIntType());
             else if (op.equals("<") || op.equals("&&"))
-                type = ".bool";
+                type = OptUtils.toOllirType(TypeUtils.getBooleanType());
         } else if (whileParent || ifParent)
-            type = ".bool";
-        else type = ".V";
+            type = OptUtils.toOllirType(TypeUtils.getBooleanType());
+        else type = OptUtils.toOllirType(TypeUtils.getVoidType());
 
 
         Optional<List<Symbol>> methodLocals = table.getLocalVariablesTry(caller);
@@ -474,10 +476,10 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         computation.append(childVisit.getComputation());
 
         String temp = OptUtils.getTemp();
-        String type = ".bool";
+        String type = OptUtils.toOllirType(TypeUtils.getBooleanType());
 
-        computation.append(temp + type + " " + ASSIGN + type + " ");
-        computation.append("!.bool " + childVisit.getCode() + END_STMT);
+        computation.append(temp + type + SPACE + ASSIGN + type + SPACE);
+        computation.append("!" + OptUtils.toOllirType(TypeUtils.getBooleanType()) + SPACE + childVisit.getCode() + END_STMT);
 
         return new OllirExprResult(temp + type, computation);
     }

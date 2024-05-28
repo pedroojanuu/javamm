@@ -163,7 +163,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(OptUtils.toOllirType(TypeUtils.getMyClassType(node.get("paramType"), "")));
         code.append(")");
 
-        code.append(".V");
+        code.append(OptUtils.toOllirType(TypeUtils.getVoidType()));
 
         code.append(L_BRACKET);
 
@@ -171,7 +171,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         for (int i = 0; i < node.getNumChildren(); i++)
             code.append(visit(node.getJmmChild(i)));
 
-        code.append(RET + ".V" + END_STMT);
+        code.append(RET + OptUtils.toOllirType(TypeUtils.getVoidType()) + END_STMT);
 
         code.append(R_BRACKET);
         code.append(NL);
@@ -183,7 +183,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
 
         StringBuilder code = new StringBuilder(".method ");
 
-        if (NodeUtils.getBooleanAttribute(node, "isPublic", "false")) code.append("public ");
+        if (NodeUtils.getBooleanAttribute(node, "isPublic", "false")) code.append(PUBLIC + SPACE);
 
         // name
         code.append(node.get("name"));
@@ -292,7 +292,7 @@ public class OllirGeneratorVisitor extends AJmmVisitor<Void, String> {
         code.append(lhs.getComputation());
 
         code.append("putfield(this, " + id + type + ", ");
-        code.append(lhs.getCode() + ").V" + END_STMT);
+        code.append(lhs.getCode() + ")" + OptUtils.toOllirType(TypeUtils.getVoidType()) + END_STMT);
 
         return code.toString();
     }
