@@ -1,15 +1,28 @@
-class ArrayIndexing {
-    int anotherFunction() {
-        return 0;
-    }
-    int function() {
-        int[] a;
-        int another;
-        a = [1, 2, 3, 4, 5, 6];
-//        another = a[this.anotherFunction()];
+import io;
 
-        a[this.anotherFunction()] = 100;
+class ArrayVarargs {
 
-        return a[this.anotherFunction()];
+    public static void main(String[] args) {
+        ArrayVarargs a;
+        a = new ArrayVarargs();
+
+        a.bar();
     }
+
+    int foo(int... a) {
+        return a[0];
+    }
+
+    int bar() {
+        int res;
+
+        res = this.foo(1, 2, 3);
+        io.println(res);
+
+        res = this.foo(4);
+        io.println(res);
+
+        return res;
+    }
+
 }

@@ -1,20 +1,17 @@
+import io;
+
 class A {
+    int a;
 
-    int a() {
-        int[] a;
-        int b;
-        int c;
-
-        a = new int[4];
-
-        a = [0, 1, 2, 3];
-
-        b = a[1];
-
-        c = [0, 1][1];
-
-        return 0;
+    public int x(){
+        a = 10;
+        io.print(a);
+        return a;
     }
 
-    public static void main(String[] args) {}
+    public static void main(String[] args){
+        A a;
+        a = new A();
+        a.x();
+    }
 }

@@ -228,23 +228,67 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
 
         OllirExprResult objectVisit = visit(node.getJmmChild(0));
         computation.append(objectVisit.getComputation());
-        String objectName = objectVisit.getCode();
+
+        String objectName;
         String methodName = node.get("method");
 
-        String invoke = "invokevirtual";
+        String invoke = "invokestatic";
 
-        for (JmmNode imp : importNodes)
-            if (imp.get("ID").equals(objectName)) {
-                invoke = "invokestatic";
-                break;
+        if (node.getJmmChild(0).getKind().equals(THIS_EXPR.toString())) {
+            objectName = "this";
+            invoke = "invokevirtual";
+        }
+        else if (node.getJmmChild(0).getKind().equals(ID_LITERAL_EXPR.toString()))
+            objectName = node.getJmmChild(0).get("id");
+        else {
+            objectName = "";
+            invoke = "invokevirtual";
+        }
+
+        String caller = node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow();
+
+        Optional<List<Symbol>> methodLocals = table.getLocalVariablesTry(caller);
+        if (methodLocals.isPresent()) {
+            List<Symbol> locals = methodLocals.get();
+            for (Symbol symbol : locals) {
+                System.out.println(symbol);
+                System.out.println(objectName);
+                if (symbol.getName().equals(objectName)) {
+                    invoke = "invokevirtual";
+                    break;
+                }
             }
+        }
+
+        Optional<List<Symbol>> methodParams = table.getParametersTry(caller);
+
+        if (invoke.equals("invokestatic") && methodParams.isPresent()) {
+            List<Symbol> params = methodParams.get();
+            for (Symbol symbol : params) {
+                if (symbol.getName().equals(objectName)) {
+                    invoke = "invokevirtual";
+                    break;
+                }
+            }
+        }
+
+        List<Symbol> classFields = table.getFields();
+
+        if (invoke.equals("invokestatic")) {
+            for (Symbol symbol : classFields) {
+                if (symbol.getName().equals(objectName)) {
+                    invoke = "invokevirtual";
+                    break;
+                }
+            }
+        }
 
         List<OllirExprResult> argsResult = visitArgs(node, methodName);
 
         for (OllirExprResult argResult : argsResult)
             computation.append(argResult.getComputation());
 
-        code.append(invoke + "(" + objectName + ", \"" + methodName + "\"");
+        code.append(invoke + "(" + objectVisit.getCode() + ", \"" + methodName + "\"");
 
         if (!argsResult.isEmpty()) {
             code.append(", ");
