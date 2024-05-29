@@ -141,6 +141,10 @@ public class TypeUtils {
             if (Kind.fromString(argList.getKind()) != Kind.ARGLIST) {
                 // Danger: child (getNumChildren() - 1) might not be arglist (it's optional in the grammar)
 
+                // if it is varargs, then allow no arguments
+                if (paramsST.size() == 1 && paramsST.get(0).getType().hasAttribute("varArgs")) {
+                    return null;
+                }
                 if (!paramsST.isEmpty()) {  // method call with no arguments but symbol table has parameter
                     System.out.println("REPORTING ERROR line 131");
                     return invalidNrArgumentsMessage;
