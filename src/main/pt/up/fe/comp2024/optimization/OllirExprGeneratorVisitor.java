@@ -361,13 +361,6 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         if (assignAncestor.isPresent() && !invokeAncestor.isPresent())
             // type will be that of the lhs of the assignment expression
             type = OptUtils.toOllirType(TypeUtils.getIdType(assignAncestor.get().get("id"), node.getParent(), table, node.getAncestor(METHOD_DECL).map(method -> method.get("name")).orElseThrow(), null));
-        else if (table.getMethods().contains(callee)) {
-            type = OptUtils.toOllirType(table.getReturnType(callee));
-            if (!visitingReturn && !assignAncestor.isPresent() && !invokeAncestor.isPresent()) return visitCallExprDiscard(node, type);
-        } else if (this.visitingArgImported)
-            type = OptUtils.toOllirType(this.visitingArgImportedType);
-        else if (visitingReturn)
-            type = OptUtils.toOllirType(returnType);
         else if (notOptAncestor.isPresent())
             type = OptUtils.toOllirType(TypeUtils.getBooleanType());
         else if (binOptAncestor.isPresent()) {
@@ -378,6 +371,13 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
                 type = OptUtils.toOllirType(TypeUtils.getBooleanType());
         } else if (whileParent || ifParent)
             type = OptUtils.toOllirType(TypeUtils.getBooleanType());
+        else if (table.getMethods().contains(callee)) {
+            type = OptUtils.toOllirType(table.getReturnType(callee));
+            if (!visitingReturn && !assignAncestor.isPresent() && !invokeAncestor.isPresent()) return visitCallExprDiscard(node, type);
+        } else if (this.visitingArgImported)
+            type = OptUtils.toOllirType(this.visitingArgImportedType);
+        else if (visitingReturn)
+            type = OptUtils.toOllirType(returnType);
         else type = OptUtils.toOllirType(TypeUtils.getVoidType());
 
 
