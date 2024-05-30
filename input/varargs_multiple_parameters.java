@@ -45,6 +45,8 @@ class MyOtherTests {
         a = this.manyArgs(1, b, t, 2);
         a = this.manyArgs(1, b, t, 2, 3, 4, 5);
         a = this.manyArgs(1, b, t, 2, 3, 4, this.test(), t.test());
+        this.manyArgs(1, b, t);
+        this.manyArgs(1, b, t, 6 * 1, 2 + 3 * 4 - 6 * 1 / (2 + 3 * (5 + 2)));
         return a;
     }
 }
