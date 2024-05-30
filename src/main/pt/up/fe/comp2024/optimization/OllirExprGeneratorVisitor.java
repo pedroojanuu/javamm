@@ -499,14 +499,15 @@ public class OllirExprGeneratorVisitor extends AJmmVisitor<Void, OllirExprResult
         StringBuilder computation = new StringBuilder();
 
         String intOllirType = OptUtils.toOllirType(TypeUtils.getIntType());
-        String intArrayOllirType = OptUtils.toOllirType(TypeUtils.getIntArrayType());
 
         String code = OptUtils.getTemp() + intOllirType;
         OllirExprResult id = visit(node.getJmmChild(0));
+
+        System.out.println("ID AQUI: " + id);
+
         computation.append(id.getComputation());
         computation.append(code + SPACE + ASSIGN + intOllirType
-        + " arraylength(" + id.getCode() + intArrayOllirType
-        + ")" + intOllirType + END_STMT);
+        + " arraylength(" + id.getCode() + ")" + intOllirType + END_STMT);
 
         return new OllirExprResult(code, computation);
     }
