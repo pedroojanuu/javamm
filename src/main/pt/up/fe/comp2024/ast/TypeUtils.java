@@ -161,13 +161,16 @@ public class TypeUtils {
             // the same type as an array, or directly an array
             for (int i = 0; i < paramsST.size(); i++) { // parameters of method definition
                 var paramType = paramsST.get(i).getType();
+                if (paramType.hasAttribute("varArgs")) {
+                    if (argNumber <= i) {   // nothing in varargs
+                        return null;
+                    }
+                    varArgsIdx = i;
+                    break;
+                }
                 if (argNumber <= i) { // cannot just check sizes before loop because of varargs
                     System.out.println("REPORTING ERROR line 146");
                     reports.add(ReportUtils.buildErrorReport(Stage.SEMANTIC, argList, invalidNrArgumentsMessage));
-                    break;
-                }
-                if (paramType.hasAttribute("varArgs")) {
-                    varArgsIdx = i;
                     break;
                 }
                 var argType = getExprType(argList.getChild(i), table, currentMethod, reports);
